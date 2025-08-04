@@ -228,92 +228,217 @@ class FormularioAutomation:
                 logger.info("🎯 CLICANDO E COLANDO NO CAMPO ESPECÍFICO...")
                 
                 try:
-                    # CLICAR NO CAMPO ESPECÍFICO
-                    logger.info("🎯 CLICANDO NO CAMPO: //*[@id='container_page_mov']/div/div/div[1]/div/div/label/input")
-                    campo_element = WebDriverWait(self.driver, 20).until(
-                        EC.element_to_be_clickable((By.XPATH, "//*[@id='container_page_mov']/div/div/div[1]/div/div/label/input"))
-                    )
+                    # ESTRATÉGIA AGRESSIVA: Usar JavaScript desde o início para encontrar e interagir com o campo
+                    logger.info("🎯 ESTRATÉGIA AGRESSIVA: Procurando campo via JavaScript...")
                     
-                    # Clicar no campo
-                    campo_element.click()
-                    logger.info("✅ CAMPO CLICADO COM SUCESSO!")
-                    time.sleep(2)
+                    # JavaScript para encontrar o campo específico "Estipulante"
+                    find_field_script = """
+                    // Procurar pelo campo específico "Estipulante"
+                    var campo = null;
                     
-                    # VERIFICAR SE É UM CAMPO SELECT E ITERAR SOBRE AS OPÇÕES
-                    logger.info("🔍 VERIFICANDO SE É UM CAMPO SELECT...")
+                    // Método 1: Procurar pelo input com data-testid específico
+                    campo = document.querySelector('input[data-testid="input-select-search"]');
+                    if (campo) {
+                        console.log('Campo Estipulante encontrado via data-testid:', campo);
+                        return { campo: campo, tipo: 'input-select' };
+                    }
                     
-                    # Tentar encontrar o elemento como select
-                    try:
-                        from selenium.webdriver.support.ui import Select
+                    // Método 2: Procurar pelo input com name específico
+                    campo = document.querySelector('input[name="stipulatorData.stipulator.label"]');
+                    if (campo) {
+                        console.log('Campo Estipulante encontrado via name:', campo);
+                        return { campo: campo, tipo: 'input-select' };
+                    }
+                    
+                    // Método 3: Procurar pelo label "Estipulante" e pegar o input
+                    var labels = document.querySelectorAll('label');
+                    for (var i = 0; i < labels.length; i++) {
+                        var label = labels[i];
+                        if (label.textContent && label.textContent.includes('Estipulante')) {
+                            var input = label.querySelector('input');
+                            if (input) {
+                                console.log('Campo Estipulante encontrado via label:', input);
+                                return { campo: input, tipo: 'input-select' };
+                            }
+                        }
+                    }
+                    
+                    // Método 4: Procurar por qualquer input visível
+                    var inputs = document.querySelectorAll('input');
+                    for (var i = 0; i < inputs.length; i++) {
+                        var input = inputs[i];
+                        if (input.offsetParent !== null && input.style.display !== 'none' && input.style.visibility !== 'hidden') {
+                            console.log('Campo input visível encontrado:', input);
+                            return { campo: input, tipo: 'input-select' };
+                        }
+                    }
+                    
+                    return null;
+                    """
+                    
+                    field_info = self.driver.execute_script(find_field_script)
+                    
+                    if field_info:
+                        logger.info(f"✅ Campo encontrado via JavaScript: {field_info['tipo']}")
                         
-                        # Procurar por um select relacionado ao campo
-                        select_element = self.driver.find_element(By.XPATH, "//*[@id='container_page_mov']/div/div/div[1]/div/div/label/select")
-                        select = Select(select_element)
-                        
-                        print("\n" + "="*80)
-                        print("📋 OPÇÕES DO CAMPO SELECT:")
-                        print("="*80)
-                        
-                        # Listar todas as opções
-                        options = select.options
-                        for i, option in enumerate(options):
-                            print(f"{i+1}. {option.text} (value: {option.get_attribute('value')})")
-                        
-                        print("="*80)
-                        print(f"Total de opções: {len(options)}")
-                        print("="*80 + "\n")
-                        
-                        logger.info(f"✅ Encontradas {len(options)} opções no select")
-                        
-                        # Tentar selecionar a opção que contém "60146757"
-                        for option in options:
-                            if "60146757" in option.text or "60146757" in option.get_attribute('value'):
-                                select.select_by_visible_text(option.text)
-                                logger.info(f"✅ Opção selecionada: {option.text}")
-                                break
-                        else:
-                            # Se não encontrar, tentar digitar o valor
-                            logger.info("📝 Digite o valor: 60146757")
-                            campo_element.send_keys("60146757")
-                            logger.info("✅ VALOR DIGITADO: 60146757")
+                        if field_info['tipo'] == 'input-select':
+                            # É um INPUT com dropdown - clicar, digitar e listar opções
+                            logger.info("📋 É um campo INPUT com dropdown - clicando e digitando...")
                             
-                    except Exception as select_error:
-                        logger.info("⚠️ Não é um select, tratando como input normal")
-                        
-                        # COLAR O VALOR
-                        logger.info("📋 COLANDO VALOR: 60146757")
-                        campo_element.send_keys("60146757")
-                        logger.info("✅ VALOR COLADO COM SUCESSO: 60146757")
-                        
-                        # Tentar também com JavaScript para garantir
-                        try:
-                            self.driver.execute_script("""
-                                var campo = document.querySelector('#container_page_mov div div div:nth-child(1) div div label input');
-                                if (campo) {
-                                    campo.value = '60146757';
-                                    campo.dispatchEvent(new Event('input', { bubbles: true }));
-                                    campo.dispatchEvent(new Event('change', { bubbles: true }));
+                            # 1. Clicar no campo
+                            click_script = """
+                            var campo = arguments[0];
+                            campo.focus();
+                            campo.click();
+                            """
+                            self.driver.execute_script(click_script, field_info['campo'])
+                            logger.info("✅ Campo clicado!")
+                            time.sleep(2)
+                            
+                            # 2. Digitar o valor
+                            type_script = """
+                            var campo = arguments[0];
+                            campo.value = '60146757';
+                            campo.dispatchEvent(new Event('input', { bubbles: true }));
+                            campo.dispatchEvent(new Event('keydown', { bubbles: true }));
+                            campo.dispatchEvent(new Event('keyup', { bubbles: true }));
+                            """
+                            self.driver.execute_script(type_script, field_info['campo'])
+                            logger.info("✅ Valor '60146757' digitado!")
+                            time.sleep(3)
+                            
+                            # 3. Listar todas as opções do dropdown
+                            logger.info("📋 Listando todas as opções do dropdown...")
+                            
+                            options_script = """
+                            // Procurar pelas opções do dropdown
+                            var options = [];
+                            
+                            // Método 1: Procurar por options com data-testid
+                            var optionElements = document.querySelectorAll('option[data-testid="input-select-search-options-item"]');
+                            for (var i = 0; i < optionElements.length; i++) {
+                                var option = optionElements[i];
+                                options.push({
+                                    text: option.textContent,
+                                    value: option.value,
+                                    index: i
+                                });
+                            }
+                            
+                            // Método 2: Se não encontrou, procurar por qualquer option
+                            if (options.length === 0) {
+                                var allOptions = document.querySelectorAll('option');
+                                for (var i = 0; i < allOptions.length; i++) {
+                                    var option = allOptions[i];
+                                    if (option.offsetParent !== null && option.style.display !== 'none') {
+                                        options.push({
+                                            text: option.textContent,
+                                            value: option.value,
+                                            index: i
+                                        });
+                                    }
                                 }
-                            """)
+                            }
+                            
+                            // Método 3: Procurar por elementos que parecem opções
+                            if (options.length === 0) {
+                                var divOptions = document.querySelectorAll('[data-testid="input-select-search-options-box"] option');
+                                for (var i = 0; i < divOptions.length; i++) {
+                                    var option = divOptions[i];
+                                    options.push({
+                                        text: option.textContent,
+                                        value: option.value,
+                                        index: i
+                                    });
+                                }
+                            }
+                            
+                            return options;
+                            """
+                            
+                            options = self.driver.execute_script(options_script)
+                            
+                            print("\n" + "="*80)
+                            print("📋 OPÇÕES DO DROPDOWN 'ESTIPULANTE':")
+                            print("="*80)
+                            
+                            for i, option in enumerate(options):
+                                print(f"{i+1}. {option['text']} (value: {option['value']})")
+                            
+                            print("="*80)
+                            print(f"Total de opções: {len(options)}")
+                            print("="*80 + "\n")
+                            
+                            logger.info(f"✅ Encontradas {len(options)} opções no dropdown")
+                            
+                            # 4. Tentar selecionar a opção "60146757"
+                            selected = False
+                            for option in options:
+                                if "60146757" in option['text'] or "60146757" in option['value']:
+                                    select_script = """
+                                    var optionElement = arguments[0];
+                                    optionElement.click();
+                                    optionElement.dispatchEvent(new Event('click', { bubbles: true }));
+                                    """
+                                    self.driver.execute_script(select_script, option)
+                                    logger.info(f"✅ Opção selecionada: {option['text']}")
+                                    selected = True
+                                    break
+                            
+                            if not selected:
+                                logger.info("⚠️ Opção '60146757' não encontrada no dropdown")
+                                
+                        else:
+                            # É um INPUT normal - preencher diretamente
+                            logger.info("📝 É um campo INPUT normal - preenchendo...")
+                            
+                            fill_script = """
+                            var campo = arguments[0];
+                            campo.focus();
+                            campo.value = '60146757';
+                            campo.dispatchEvent(new Event('input', { bubbles: true }));
+                            campo.dispatchEvent(new Event('change', { bubbles: true }));
+                            campo.dispatchEvent(new Event('blur', { bubbles: true }));
+                            """
+                            self.driver.execute_script(fill_script, field_info['campo'])
                             logger.info("✅ VALOR DEFINIDO VIA JAVASCRIPT: 60146757")
-                        except Exception as js_error:
-                            logger.error(f"❌ ERRO COM JAVASCRIPT: {js_error}")
+                    
+                    else:
+                        logger.warning("⚠️ Campo não encontrado via JavaScript, tentando método alternativo...")
+                        
+                        # Método alternativo: tentar clicar via Selenium
+                        try:
+                            campo_element = WebDriverWait(self.driver, 10).until(
+                                EC.element_to_be_clickable((By.XPATH, "//*[@id='container_page_mov']/div/div/div[1]/div/div/label/input"))
+                            )
+                            campo_element.click()
+                            campo_element.send_keys("60146757")
+                            logger.info("✅ Campo clicado e preenchido via Selenium")
+                        except Exception as selenium_error:
+                            logger.error(f"❌ Erro via Selenium: {selenium_error}")
                     
                 except Exception as click_error:
                     logger.error(f"❌ ERRO AO CLICAR/COLAR: {click_error}")
                     
-                    # Tentar com JavaScript como fallback
+                    # Último recurso: JavaScript genérico
                     try:
-                        logger.info("⚡ TENTANDO COM JAVASCRIPT...")
+                        logger.info("⚡ ÚLTIMO RECURSO: JavaScript genérico...")
                         self.driver.execute_script("""
-                            var campo = document.querySelector('#container_page_mov div div div:nth-child(1) div div label input');
-                            if (campo) {
-                                campo.click();
-                                campo.value = '60146757';
-                                campo.dispatchEvent(new Event('input', { bubbles: true }));
+                            // Procurar por qualquer campo de input visível
+                            var inputs = document.querySelectorAll('input');
+                            for (var i = 0; i < inputs.length; i++) {
+                                var input = inputs[i];
+                                if (input.offsetParent !== null && input.style.display !== 'none') {
+                                    input.focus();
+                                    input.value = '60146757';
+                                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                                    console.log('Campo preenchido:', input);
+                                    break;
+                                }
                             }
                         """)
-                        logger.info("✅ VALOR DEFINIDO VIA JAVASCRIPT: 60146757")
+                        logger.info("✅ VALOR DEFINIDO VIA JAVASCRIPT GENÉRICO: 60146757")
                     except Exception as js_error:
                         logger.error(f"❌ ERRO COM JAVASCRIPT: {js_error}")
             else:
