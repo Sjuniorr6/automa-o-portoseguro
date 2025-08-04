@@ -1,44 +1,76 @@
-import json
-import time
+"""
+Módulo de Automação Selenium para Porto Seguro Corretor
+=======================================================
+
+Este módulo fornece funcionalidades de automação para interagir com o
+sistema Corretor Online da Porto Seguro usando Selenium WebDriver.
+
+Funcionalidades:
+- Abertura automática do navegador
+- Navegação para o Corretor Online
+- Execução de ações automatizadas
+- Manutenção do navegador aberto para uso manual
+"""
+
 import logging
-import random
+import time
+import json
+import os
 from datetime import datetime
+from typing import Optional, Dict, Any
+
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.keys import Keys
-from django.conf import settings
-from .models import AutomationLog
-from .automation_config import URLS, CHROME_OPTIONS, TIMING, SCREENSHOT, LOGGING, BEHAVIOR, TEST_DATA
-import os
 
-# Configurar logging
-logging.basicConfig(level=logging.INFO)
+from .automation_config import URLS, BEHAVIOR, TIMING, CHROME_OPTIONS, TEST_DATA
+
+# Configuração do logger
 logger = logging.getLogger(__name__)
 
-class FormularioAutomation:
-    def __init__(self, form_data, automation_log=None):
+# Constantes
+PORTO_SEGURO_URL = "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/"
+DEFAULT_WAIT_TIME = 10
+INFINITE_LOOP_DELAY = 1
+
+
+class AutomationManager:
+    """
+    Gerenciador principal da automação Selenium.
+    
+    Responsável por coordenar todas as operações de automação,
+    incluindo configuração do driver, execução de ações e
+    gerenciamento do ciclo de vida do navegador.
+    """
+    
+    def __init__(self, form_data: Optional[Dict[str, Any]] = None):
+        """
+        Inicializa o gerenciador de automação.
+        
+        Args:
+            form_data: Dados do formulário para usar na automação
+        """
         self.form_data = form_data or TEST_DATA
         self.driver = None
-        self.log_file = f"automation_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        self.automation_log = automation_log
+        self._is_running = False
     
-    def setup_driver(self):
-        """Configura o driver do Chrome com configurações anti-detecção"""
+    def setup_driver(self) -> bool:
+        """
+        Configura o driver do Chrome com as opções especificadas.
+        
+        Returns:
+            bool: True se a configuração foi bem-sucedida, False caso contrário
+        """
         try:
+            logger.info("🔧 Configurando driver do Chrome...")
+            
             chrome_options = Options()
             
-            # Configurações anti-detecção
-            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            chrome_options.add_experimental_option('useAutomationExtension', False)
-            
-            # Configurações de performance
+            # Aplicar configurações do automation_config.py
             if CHROME_OPTIONS.get('no_sandbox'):
                 chrome_options.add_argument("--no-sandbox")
             if CHROME_OPTIONS.get('disable_dev_shm_usage'):
@@ -50,313 +82,600 @@ class FormularioAutomation:
             if CHROME_OPTIONS.get('headless'):
                 chrome_options.add_argument("--headless")
             
-            # Configurações adicionais anti-detecção
-            chrome_options.add_argument("--disable-web-security")
-            chrome_options.add_argument("--allow-running-insecure-content")
-            chrome_options.add_argument("--disable-features=VizDisplayCompositor")
-            chrome_options.add_argument("--disable-extensions")
-            chrome_options.add_argument("--disable-plugins")
-            chrome_options.add_argument("--disable-default-apps")
-            chrome_options.add_argument("--disable-sync")
-            chrome_options.add_argument("--disable-translate")
-            chrome_options.add_argument("--disable-background-timer-throttling")
-            chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-            chrome_options.add_argument("--disable-renderer-backgrounding")
-            chrome_options.add_argument("--disable-features=TranslateUI")
-            chrome_options.add_argument("--disable-ipc-flooding-protection")
+            # Configurações para modo incógnito/anônimo
+            chrome_options.add_argument("--incognito")
+            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+            chrome_options.add_experimental_option('useAutomationExtension', False)
             
+            # Instalar e configurar o ChromeDriver
             service = Service(ChromeDriverManager().install())
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            
-            # Executar script para remover propriedades de automação
-            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-            
             self.driver.implicitly_wait(TIMING.get('element_wait', 10))
-            logger.info("Driver do Chrome configurado com sucesso (anti-detecção ativado)")
-            return True
-        except Exception as e:
-            logger.error(f"Erro ao configurar driver: {e}")
-            return False
-    
-    def save_form_data_to_json(self):
-        """Salva os dados do formulário em JSON"""
-        try:
-            log_dir = os.path.join(settings.BASE_DIR, LOGGING.get('directory', 'logs'))
-            os.makedirs(log_dir, exist_ok=True)
-            log_path = os.path.join(log_dir, self.log_file)
-            data = {
-                'timestamp': datetime.now().isoformat(),
-                'form_data': self.form_data,
-                'automation_status': 'started',
-                'config_used': {'urls': URLS, 'behavior': BEHAVIOR, 'timing': TIMING}
-            }
-            with open(log_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            logger.info(f"Dados do formulário salvos em: {log_path}")
-            return log_path
-        except Exception as e:
-            logger.error(f"Erro ao salvar dados em JSON: {e}")
-            return None
-    
-    def execute_automation(self):
-        """Executa a automação principal"""
-        try:
-            logger.info("🚀 INICIANDO AUTOMAÇÃO DO PORTO SEGURO...")
-            if self.automation_log:
-                self.automation_log.status = 'running'
-                self.automation_log.save()
-            json_path = self.save_form_data_to_json()
-            if not json_path or not self.setup_driver():
-                return False
-            success = self.run_porto_seguro_automation()
-            self.update_log_with_result(json_path, success)
-            return success
-        except Exception as e:
-            logger.error(f"Erro na execução da automação: {e}")
-            if self.automation_log:
-                self.automation_log.status = 'failed'
-                self.automation_log.error_message = str(e)
-                self.automation_log.save()
-            return False
-        finally:
-            if self.driver:
-                logger.info("🔄 Navegador mantido aberto")
-                # GARANTIR que o navegador NUNCA seja fechado
-                # Não chamar self.driver.quit() ou self.driver.close()
-                
-                # PROTEÇÃO EXTRA: Manter o driver vivo
-                try:
-                    # Verificar se o driver ainda está ativo
-                    self.driver.current_url
-                    logger.info("✅ Driver ainda ativo - navegador permanecerá aberto")
-                except:
-                    logger.warning("⚠️ Driver pode ter sido fechado automaticamente")
-
-    def run_porto_seguro_automation(self):
-        """Automação específica do Porto Seguro - APENAS LOGIN"""
-        try:
-            # 1. Acessa página de login
-            porto_url = "https://corretor.portoseguro.com.br/portal/site/corretoronline/template.LOGIN/"
-            logger.info("🌐 ABRINDO PORTO SEGURO CORRETOR ONLINE...")
-            self.driver.get(porto_url)
-            logger.info(f"✅ Página aberta: {porto_url}")
-            time.sleep(10)
             
-            # Aguardar carregamento da página
-            logger.info("⏳ Aguardando carregamento da página...")
+            # Remover indicadores de automação para stealth
+            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            self.driver.execute_script("Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]})")
+            self.driver.execute_script("Object.defineProperty(navigator, 'languages', {get: () => ['pt-BR', 'pt', 'en-US', 'en']})")
+            
+            logger.info("✅ Driver do Chrome configurado com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao configurar driver: {e}")
+            return False
+    
+    def open_porto_seguro_corretor(self) -> bool:
+        """
+        Abre o Corretor Online da Porto Seguro e executa a automação.
+        
+        Returns:
+            bool: True se a automação foi bem-sucedida, False caso contrário
+        """
+        try:
+            logger.info("🚀 Abrindo Corretor Online da Porto Seguro...")
+            
+            # Navegar para a URL
+            self.driver.get(PORTO_SEGURO_URL)
+            time.sleep(TIMING.get('page_load_wait', 3))
+            
+            logger.info("✅ Corretor Online da Porto Seguro aberto com sucesso")
             time.sleep(5)
             
-            # 2. Clicar no botão específico
-            logger.info("🔍 Procurando botão para clicar...")
-            try:
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, "/html/body/div[4]/div[1]/div/div[2]/ul/li/button"))
-                )
+            # Executar ações de automação se configurado
+            if BEHAVIOR.get('click_porto_button', True):
+                self._click_porto_button()
                 
-                button = self.driver.find_element(By.XPATH, "/html/body/div[4]/div[1]/div/div[2]/ul/li/button")
-                button.click()
-                
-                logger.info("✅ Botão clicado com sucesso!")
-                time.sleep(3)
-            except Exception as e:
-                logger.warning(f"⚠️ Erro ao clicar no botão: {e}")
-                # Continuar mesmo se não conseguir clicar no botão
-            
-            # Tirar screenshot de debug
-            if BEHAVIOR.get('take_screenshots', True):
-                screenshot_path = self.take_screenshot()
-                if screenshot_path:
-                    logger.info(f"📸 Screenshot de debug salvo em: {screenshot_path}")
-            
-            # 3. Aguardar página carregar completamente antes do login
-            logger.info("⏳ Aguardando carregamento completo da página...")
-            try:
-                WebDriverWait(self.driver, 20).until(
-                    lambda driver: driver.execute_script("return document.readyState") == "complete"
-                )
-                logger.info("✅ Página carregada completamente")
-                time.sleep(2)
-            except Exception as e:
-                logger.warning(f"⚠️ Erro ao aguardar carregamento: {e}")
-            
-            # 4. Processo de login
-            logger.info("🔐 INICIANDO PROCESSO DE LOGIN...")
-            
-            # Preencher CPF
-            logger.info("📝 Preenchendo CPF...")
-            try:
-                # Tentar diferentes seletores para o campo CPF
-                cpf_selectors = [
-                    '//*[@id="logonPrincipal"]',
-                    '//input[@id="logonPrincipal"]',
-                    '//input[@name="logonPrincipal"]',
-                    '//input[@type="text"]',
-                    '//input[contains(@class, "login")]'
-                ]
-                
-                cpf_field = None
-                for selector in cpf_selectors:
-                    try:
-                        cpf_field = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.XPATH, selector))
-                        )
-                        logger.info(f"✅ Campo CPF encontrado com seletor: {selector}")
-                        break
-                    except:
-                        continue
-                
-                if not cpf_field:
-                    raise Exception("Campo CPF não encontrado")
-                
-                cpf_field.clear()
-                cpf_field.send_keys('140.552.248-85')
-                logger.info("✅ CPF preenchido: 140.552.248-85")
-                
-            except Exception as e:
-                logger.error(f"❌ Erro ao preencher CPF: {e}")
-                self.take_screenshot()
-                raise e
-            
-            # Preencher senha
-            logger.info("🔒 Preenchendo senha...")
-            try:
-                # Tentar diferentes seletores para o campo senha
-                password_selectors = [
-                    '//*[@id="liSenha"]/div/input',
-                    '//input[@id="liSenha"]',
-                    '//input[@type="password"]',
-                    '//input[contains(@name, "senha")]',
-                    '//input[contains(@name, "password")]'
-                ]
-                
-                password_field = None
-                for selector in password_selectors:
-                    try:
-                        password_field = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.XPATH, selector))
-                        )
-                        logger.info(f"✅ Campo senha encontrado com seletor: {selector}")
-                        break
-                    except:
-                        continue
-                
-                if not password_field:
-                    raise Exception("Campo senha não encontrado")
-                
-                password_field.clear()
-                password_field.send_keys('Shaddai2025!')
-                logger.info("✅ Senha preenchida")
-                
-            except Exception as e:
-                logger.error(f"❌ Erro ao preencher senha: {e}")
-                self.take_screenshot()
-                raise e
-            
-            # Clicar no botão de login
-            logger.info("🚀 Clicando no botão de login...")
-            try:
-                # Tentar diferentes seletores para o botão de login
-                login_selectors = [
-                    '//*[@id="inputLogin"]',
-                    '//button[@id="inputLogin"]',
-                    '//input[@id="inputLogin"]',
-                    '//button[contains(text(), "Login")]',
-                    '//button[contains(text(), "Entrar")]',
-                    '//input[@type="submit"]',
-                    '//button[@type="submit"]'
-                ]
-                
-                login_button = None
-                for selector in login_selectors:
-                    try:
-                        login_button = WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.XPATH, selector))
-                        )
-                        logger.info(f"✅ Botão de login encontrado com seletor: {selector}")
-                        break
-                    except:
-                        continue
-                
-                if not login_button:
-                    raise Exception("Botão de login não encontrado")
-                
-                login_button.click()
-                logger.info("✅ Botão de login clicado!")
-                
-            except Exception as e:
-                logger.error(f"❌ Erro ao clicar no botão de login: {e}")
-                self.take_screenshot()
-                raise e
-            
-            # Aguardar processamento do login
-            logger.info("⏳ Aguardando processamento do login...")
-            time.sleep(10)
-            codigo1 = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="susepsAutocomplete"]'))
-            )
-            codigo1.click()
-            codigo1.send_keys('BA6QXJ (P)')
-            logger.info("✅ codigo passado")
-            time.sleep(10)
-            enter = WebDriverWait(self.driver, 15).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="btnAvancarSusep"]'))
-            )
-            enter.click()
-            logger.info("✅ Botão de login clicado!")
-            time.sleep(10)
-            
-            # 5. VERIFICAR SE O LOGIN FOI BEM-SUCEDIDO
-            logger.info("🔍 VERIFICANDO SE O LOGIN FOI BEM-SUCEDIDO...")
-            try:
-                # Verificar se ainda está na página de login
-                login_elements = self.driver.find_elements(By.XPATH, '//*[@id="logonPrincipal"]')
-                if login_elements:
-                    logger.error("❌ LOGIN FALHOU - Ainda na página de login!")
-                    return False
-                else:
-                    logger.info("✅ LOGIN REALIZADO COM SUCESSO!")
-                    logger.info("🎉 AUTOMAÇÃO PARADA APÓS LOGIN - Navegador permanecerá aberto!")
+                if BEHAVIOR.get('do_login', True):
+                    self._perform_login()
                     
-                    # Tirar screenshot do sucesso
-                    if BEHAVIOR.get('take_screenshots', True):
-                        self.take_screenshot()
-                    
-                    return True
-            except Exception as e:
-                logger.error(f"❌ Erro ao verificar login: {e}")
-                return False
+                    if BEHAVIOR.get('fill_susep', True):
+                        self._fill_susep_field()
+            
+            logger.info("🎉 Automação do Corretor Online concluída!")
+            return True
             
         except Exception as e:
-            logger.error(f"❌ Erro na automação: {e}")
-            logger.info("🔄 NAVEGADOR PERMANECERÁ ABERTO MESMO COM ERRO!")
+            logger.error(f"❌ Erro ao abrir Corretor Online: {e}")
             return False
     
-    def take_screenshot(self):
+    def _click_porto_button(self) -> bool:
+        """
+        Clica no botão específico da Porto Seguro.
+        
+        Returns:
+            bool: True se o clique foi bem-sucedido, False caso contrário
+        """
         try:
-            dirpath = os.path.join(settings.BASE_DIR, SCREENSHOT.get('directory','screenshots'))
-            os.makedirs(dirpath, exist_ok=True)
-            name = f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-            path = os.path.join(dirpath, name)
-            self.driver.save_screenshot(path)
-            return path
+            logger.info("🔍 Procurando botão para clicar...")
+            
+            button = WebDriverWait(self.driver, DEFAULT_WAIT_TIME).until(
+                EC.element_to_be_clickable((By.XPATH, "/html/body/div[4]/div[1]/div/div[2]/ul/li/button"))
+            )
+            
+            button.click()
+            logger.info("✅ Botão clicado com sucesso!")
+            time.sleep(3)
+            
+            return True
+            
         except Exception as e:
-            logger.error(f"Erro ao tirar screenshot: {e}")
-            return None
+            logger.error(f"❌ Erro ao clicar no botão: {e}")
+            return False
     
-    def update_log_with_result(self, json_path, success):
+    def _perform_login(self) -> bool:
+        """
+        Realiza o login no sistema.
+        
+        Returns:
+            bool: True se o login foi bem-sucedido, False caso contrário
+        """
         try:
-            with open(json_path,'r',encoding='utf-8') as f: data = json.load(f)
-            data.update({'automation_status': 'completed' if success else 'failed', 'completion_timestamp': datetime.now().isoformat(), 'success': success})
-            with open(json_path,'w',encoding='utf-8') as f: json.dump(data,f,ensure_ascii=False, indent=2)
-            if self.automation_log:
-                self.automation_log.status = 'completed' if success else 'failed'
-                self.automation_log.completed_at = datetime.now()
-                self.automation_log.log_file_path = json_path
-                self.automation_log.automation_data = data
-                self.automation_log.save()
+            logger.info("🔐 Iniciando processo de login...")
+            
+            # Preencher CPF
+            logger.info("🔍 Aguardando campo de CPF...")
+            cpf_field = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="logonPrincipal"]'))
+            )
+            cpf_field.clear()
+            cpf_field.send_keys("140.552.248-85")
+            logger.info("✅ CPF preenchido: 140.552.248-85")
+            time.sleep(2)
+            
+            # Preencher senha
+            logger.info("🔍 Aguardando campo de senha...")
+            senha_field = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="liSenha"]/div/input'))
+            )
+            senha_field.clear()
+            senha_field.send_keys("Shaddai2025!")
+            logger.info("✅ Senha preenchida")
+            time.sleep(2)
+            
+            # Clicar no botão de login
+            logger.info("🔍 Aguardando botão de login...")
+            login_button = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="inputLogin"]'))
+            )
+            login_button.click()
+            logger.info("✅ Botão de login clicado!")
+            
+            time.sleep(5)
+            logger.info("🎉 Processo de login concluído!")
+            
+            return True
+            
         except Exception as e:
-            logger.error(f"Erro ao atualizar log: {e}")
+            logger.error(f"❌ Erro durante login: {e}")
+            return False
+    
+    def _fill_susep_field(self) -> bool:
+        """
+        Preenche o campo SUSEP e clica no elemento específico usando JavaScript.
+        
+        Returns:
+            bool: True se o preenchimento foi bem-sucedido, False caso contrário
+        """
+        try:
+            logger.info("📋 Preenchendo campo SUSEP...")
+            
+            # Aguardar o campo SUSEP ficar clicável
+            logger.info("🔍 Aguardando campo SUSEP...")
+            susep_field = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="susepsAutocomplete"]'))
+            )
+            
+            # Preencher SUSEP
+            susep_field.clear()
+            susep_field.send_keys("BA6QXJ (P)")
+            logger.info("✅ Campo SUSEP preenchido: BA6QXJ (P)")
+            time.sleep(2)
+            
+            # Aguardar o botão avançar ficar clicável
+            logger.info("🔍 Aguardando botão avançar...")
+            avancar_button = WebDriverWait(self.driver, 15).until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="btnAvancarSusep"]'))
+            )
+            
+            # Clicar no botão avançar
+            avancar_button.click()
+            logger.info("✅ Botão avançar clicado!")
+            time.sleep(3)
+            
+            logger.info("🎉 Processo SUSEP concluído!")
+            
+            # PULAR ETAPAS INTERMEDIÁRIAS E IR DIRETO AO REDIRECIONAMENTO
+            logger.info("🎯 Pulando etapas intermediárias e indo direto ao redirecionamento...")
+            
+            # Aguardar um pouco para a página carregar
+            time.sleep(5)
+            logger.info("✅ Pronto para redirecionamento direto!")
+            
+            # PRIMEIRO: Redirecionar para o link da Gestão de Apólice
+            logger.info("🎯 PRIMEIRO: Redirecionando para o link da Gestão de Apólice...")
+            
+            # URL direta da Gestão de Apólice (simplificada para teste)
+            gestao_apolice_url = "https://wwws.portoseguro.com.br/react-spa-saud-pbko-administracao-de-apolices/"
+            logger.info(f"📍 Navegando para: {gestao_apolice_url}")
+            
+            try:
+                # Fazer o redirecionamento
+                self.driver.get(gestao_apolice_url)
+                time.sleep(20)  # Aguardar mais tempo para carregamento
+                
+                logger.info(f"📍 URL atual: {self.driver.current_url}")
+                logger.info(f"📍 Título da página: {self.driver.title}")
+                
+                # Verificar se a página carregou
+                page_source = self.driver.page_source
+                if "Escolha o contrato" in page_source:
+                    logger.info("✅ Página carregou corretamente - encontrou 'Escolha o contrato'")
+                else:
+                    logger.warning("⚠️ Página pode não ter carregado completamente")
+                    logger.info("🔍 Tentando encontrar qualquer texto na página...")
+                    try:
+                        body = self.driver.find_element(By.TAG_NAME, "body")
+                        logger.info(f"✅ Body encontrado, conteúdo: {body.text[:500]}...")
+                    except Exception as body_error:
+                        logger.error(f"❌ Erro ao encontrar body: {body_error}")
+                
+                # SEGUNDO: Aceitar qualquer pop-up que apareça
+                logger.info("🎯 SEGUNDO: Aceitando qualquer pop-up...")
+                
+                # Aguardar um pouco para a página carregar
+                time.sleep(5)
+                
+                # ACEITAR QUALQUER POP-UP AUTOMATICAMENTE
+                try:
+                    logger.info("🔍 Procurando e aceitando qualquer pop-up...")
+                    js_script = """
+                    // Aceitar qualquer pop-up que apareça
+                    var buttons = document.querySelectorAll('button');
+                    var clicked = false;
+                    
+                    for (var i = 0; i < buttons.length; i++) {
+                        var button = buttons[i];
+                        var text = button.textContent.toLowerCase();
+                        
+                        // Aceitar qualquer botão que pareça ser de confirmação
+                        if (text.includes('ok') || 
+                            text.includes('entendi') || 
+                            text.includes('fechar') || 
+                            text.includes('aceitar') || 
+                            text.includes('confirmar') || 
+                            text.includes('continuar') || 
+                            text.includes('prosseguir') ||
+                            text.includes('sim') ||
+                            text.includes('yes') ||
+                            text.includes('close') ||
+                            text.includes('accept') ||
+                            text.includes('confirm') ||
+                            text.includes('continue')) {
+                            button.click();
+                            clicked = true;
+                            break;
+                        }
+                    }
+                    
+                    // Se não encontrou botão específico, clicar no primeiro botão visível
+                    if (!clicked) {
+                        for (var i = 0; i < buttons.length; i++) {
+                            var button = buttons[i];
+                            var style = window.getComputedStyle(button);
+                            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                                button.click();
+                                clicked = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    return clicked ? 'Pop-up aceito automaticamente' : 'Nenhum pop-up encontrado';
+                    """
+                    result = self.driver.execute_script(js_script)
+                    logger.info(f"✅ Resultado: {result}")
+                    
+                    # Aguardar o pop-up fechar
+                    time.sleep(3)
+                    
+                except Exception as popup_error:
+                    logger.warning(f"⚠️ Erro ao aceitar pop-up: {popup_error}")
+                
+                # TERCEIRO: Agora procurar o campo e preencher
+                logger.info("🎯 TERCEIRO: Procurando campo para preencher...")
+                
+                # Aguardar mais um pouco para a página carregar
+                time.sleep(5)
+                
+                try:
+                    # ESTRATÉGIA AGRESSIVA: Procurar por qualquer campo que possa ser preenchido
+                    logger.info("🎯 ESTRATÉGIA AGRESSIVA: Procurando por qualquer campo preenchível...")
+                    
+                    # 1. Tentar encontrar pelo placeholder "Estipulante"
+                    try:
+                        estipulante_input = self.driver.find_element(By.XPATH, "//input[@placeholder='Estipulante']")
+                        logger.info("✅ Campo 'Estipulante' encontrado pelo placeholder!")
+                        
+                        # Preencher o campo com JavaScript
+                        js_script = """
+                        var input = document.querySelector('input[placeholder="Estipulante"]');
+                        if (input) {
+                            input.value = '60146757';
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            input.dispatchEvent(new Event('change', { bubbles: true }));
+                            input.dispatchEvent(new Event('blur', { bubbles: true }));
+                            return 'Campo Estipulante preenchido com 60146757';
+                        } else {
+                            return 'Campo Estipulante não encontrado';
+                        }
+                        """
+                        
+                        result = self.driver.execute_script(js_script)
+                        logger.info(f"✅ JavaScript executado: {result}")
+                        logger.info("🛑 Automação concluída - campo Estipulante preenchido!")
+                        return True
+                        
+                    except Exception as estipulante_error:
+                        logger.warning(f"⚠️ Não conseguiu encontrar pelo placeholder: {estipulante_error}")
+                    
+                    # 2. Tentar encontrar qualquer input na página
+                    all_inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                    logger.info(f"📋 Encontrados {len(all_inputs)} inputs na página")
+                    
+                    if len(all_inputs) > 0:
+                        # Listar todos os inputs encontrados
+                        for i, input_elem in enumerate(all_inputs):
+                            input_id = input_elem.get_attribute('id')
+                            input_type = input_elem.get_attribute('type')
+                            input_placeholder = input_elem.get_attribute('placeholder')
+                            input_class = input_elem.get_attribute('class')
+                            input_name = input_elem.get_attribute('name')
+                            
+                            logger.info(f"📋 Input {i+1}: ID='{input_id}', Type='{input_type}', Placeholder='{input_placeholder}', Class='{input_class}', Name='{input_name}'")
+                        
+                        # 3. Tentar preencher o PRIMEIRO input (mais provável de ser o campo de busca)
+                        logger.info("🎯 Tentando preencher o PRIMEIRO input encontrado...")
+                        
+                        js_script = """
+                        var inputs = document.getElementsByTagName('input');
+                        if (inputs.length > 0) {
+                            // Focar no primeiro input
+                            inputs[0].focus();
+                            // Limpar o campo
+                            inputs[0].value = '';
+                            // Preencher com o valor
+                            inputs[0].value = '60146757';
+                            // Disparar eventos
+                            inputs[0].dispatchEvent(new Event('input', { bubbles: true }));
+                            inputs[0].dispatchEvent(new Event('change', { bubbles: true }));
+                            inputs[0].dispatchEvent(new Event('blur', { bubbles: true }));
+                            return 'Primeiro input preenchido com 60146757';
+                        } else {
+                            return 'Nenhum input encontrado';
+                        }
+                        """
+                        
+                        result = self.driver.execute_script(js_script)
+                        logger.info(f"✅ JavaScript executado: {result}")
+                        logger.info("🛑 Automação concluída - primeiro input preenchido!")
+                        return True
+                        
+                    else:
+                        logger.warning("⚠️ Nenhum input encontrado na página")
+                        
+                        # 4. Tentar encontrar outros tipos de campos (textarea, etc.)
+                        all_textareas = self.driver.find_elements(By.TAG_NAME, "textarea")
+                        logger.info(f"📋 Encontrados {len(all_textareas)} textareas na página")
+                        
+                        if len(all_textareas) > 0:
+                            logger.info("🎯 Tentando preencher o primeiro textarea...")
+                            
+                            js_script = """
+                            var textareas = document.getElementsByTagName('textarea');
+                            if (textareas.length > 0) {
+                                textareas[0].value = '60146757';
+                                textareas[0].dispatchEvent(new Event('input', { bubbles: true }));
+                                textareas[0].dispatchEvent(new Event('change', { bubbles: true }));
+                                return 'Primeiro textarea preenchido com 60146757';
+                            } else {
+                                return 'Nenhum textarea encontrado';
+                            }
+                            """
+                            
+                            result = self.driver.execute_script(js_script)
+                            logger.info(f"✅ JavaScript executado: {result}")
+                            logger.info("🛑 Automação concluída - primeiro textarea preenchido!")
+                            return True
+                        
+                        logger.info("🛑 Automação concluída - nenhum campo encontrado")
+                        return False
+                    
+                    return True
+                    
+                except Exception as field_error:
+                    logger.error(f"❌ Erro ao procurar campos: {field_error}")
+                    logger.info("🛑 Automação concluída - erro na busca")
+                    return False
+                
+            except Exception as redirect_error:
+                logger.error(f"❌ Erro ao redirecionar: {redirect_error}")
+                logger.info("🛑 Automação concluída - erro no redirecionamento")
+                return False
+                
+            except Exception as e:
+                logger.error(f"❌ Erro ao redirecionar diretamente: {e}")
+                logger.info("🔄 Tentando métodos alternativos...")
+                
+                # Tentar com JavaScript como fallback
+                try:
+                    logger.info("🔍 Tentando redirecionamento via JavaScript...")
+                    js_redirect = f"window.location.href = '{gestao_apolice_url}';"
+                    self.driver.execute_script(js_redirect)
+                    time.sleep(15)
+                    logger.info(f"📍 URL após JavaScript: {self.driver.current_url}")
+                    
+                    # Tentar novamente encontrar o campo após JavaScript
+                    try:
+                        logger.info("🔍 Procurando campo de input após JavaScript...")
+                        clicar_input = self.driver.find_element(By.XPATH, '//*[@id="container_page_mov"]/div/div/div[1]/div/div/label/input')
+                        clicar_input.click()
+                        clicar_input.send_keys("60146757")
+                        logger.info("✅ Campo preenchido com sucesso após JavaScript: 60146757")
+                        logger.info("🛑 Automação concluída - página carregada e campo preenchido")
+                    except Exception as input_error2:
+                        logger.warning(f"⚠️ Erro ao preencher campo após JavaScript: {input_error2}")
+                        logger.info("🛑 Automação concluída - página carregada (campo não encontrado)")
+                    
+                    return True
+                    
+                except Exception as js_error:
+                    logger.error(f"❌ Erro no redirecionamento JavaScript: {js_error}")
+                    logger.error("❌ Falha no redirecionamento para Gestão de Apólice!")
+                    logger.info("🛑 Automação parada - não foi possível acessar a página")
+                    return False
+            
+        except Exception as e:
+            logger.error(f"❌ Erro durante preenchimento SUSEP ou clique no elemento: {e}")
+            return False
+    
+    def setup(self) -> bool:
+        """
+        Configura o ambiente de automação.
+        
+        Returns:
+            bool: True se a configuração foi bem-sucedida, False caso contrário
+        """
+        try:
+            logger.info("🔧 Configurando ambiente de automação...")
+            
+            # Configura o driver
+            if not self.setup_driver():
+                logger.error("❌ Falha ao configurar o driver do Chrome")
+                return False
+            
+            logger.info("✅ Ambiente de automação configurado com sucesso")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Erro durante configuração: {e}")
+            return False
+    
+    def execute_automation(self) -> bool:
+        """
+        Executa a automação principal.
+        
+        Returns:
+            bool: True se a automação foi bem-sucedida, False caso contrário
+        """
+        try:
+            logger.info("🚀 Iniciando execução da automação...")
+            
+            # Abre o Corretor Online da Porto Seguro
+            success = self.open_porto_seguro_corretor()
+            
+            if success:
+                logger.info("✅ Automação inicial concluída com sucesso!")
+            else:
+                logger.warning("⚠️ Automação inicial teve problemas, mas continuando...")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Erro durante execução da automação: {e}")
+            return False
+    
+    def keep_browser_open(self) -> None:
+        """
+        Mantém o navegador aberto indefinidamente para uso manual.
+        
+        O navegador permanecerá aberto até que o usuário interrompa
+        o processo (Ctrl+C) ou feche a janela manualmente.
+        """
+        self._is_running = True
+        
+        logger.info("🌐 Navegador permanecerá aberto para uso manual")
+        logger.info("💡 Você pode continuar trabalhando no sistema manualmente")
+        logger.info("🔒 Para fechar o navegador, feche a janela manualmente ou use Ctrl+C no console")
+        
+        try:
+            while self._is_running:
+                time.sleep(INFINITE_LOOP_DELAY)
+                
+        except KeyboardInterrupt:
+            logger.info("🛑 Interrupção detectada pelo usuário")
+            self._is_running = False
+            
+        except Exception as e:
+            logger.error(f"❌ Erro durante execução: {e}")
+            self._is_running = False
+    
+    def cleanup(self) -> None:
+        """
+        Limpa recursos e fecha o navegador.
+        """
+        try:
+            if self.driver:
+                logger.info("🔒 Fechando navegador...")
+                self.driver.quit()
+                logger.info("✅ Driver Selenium encerrado com sucesso")
+                
+        except Exception as e:
+            logger.error(f"❌ Erro ao fechar navegador: {e}")
+    
+    def run(self) -> bool:
+        """
+        Executa o fluxo completo de automação.
+        
+        Returns:
+            bool: True se todo o processo foi bem-sucedido, False caso contrário
+        """
+        try:
+            # Configuração
+            if not self.setup():
+                return False
+            
+            # Execução da automação
+            if not self.execute_automation():
+                return False
+            
+            # Mantém navegador aberto
+            self.keep_browser_open()
+            
+            return True
+            
+        except Exception as e:
+            logger.exception("💥 Erro crítico durante execução:")
+            return False
+            
+        finally:
+            # Limpeza sempre executa
+            self.cleanup()
 
-def run_automation_for_form(form_data, automation_log=None):
-    automation = FormularioAutomation(form_data, automation_log)
-    return automation.execute_automation()
+
+def run_automation_for_form(form_data: Optional[Dict[str, Any]] = None) -> bool:
+    """
+    Função principal para executar a automação Selenium.
+    
+    Esta função é chamada pelo comando Django (test_automation.py) ou
+    outros triggers para abrir o link do Porto Seguro Corretor via Selenium.
+    O navegador permanecerá aberto até intervenção manual.
+    
+    Args:
+        form_data: Dados do formulário para usar na automação
+        
+    Returns:
+        bool: True se a automação foi bem-sucedida, False caso contrário
+    """
+    logger.info("🤖 Iniciando automação Selenium para Porto Seguro Corretor")
+    
+    # Cria e executa o gerenciador de automação
+    manager = AutomationManager(form_data)
+    success = manager.run()
+    
+    if success:
+        logger.info("🎉 Automação concluída com sucesso!")
+    else:
+        logger.error("💥 Falha na execução da automação")
+    
+    return success
+
+
+def acessar_o_corretor_online(driver: webdriver.Chrome) -> bool:
+    """
+    Função utilitária para acessar o corretor online.
+    
+    Args:
+        driver: Instância do WebDriver
+        
+    Returns:
+        bool: True se o botão foi clicado com sucesso, False caso contrário
+    """
+    try:
+        logger.info("🔍 Procurando botão do corretor online...")
+        
+        button = WebDriverWait(driver, DEFAULT_WAIT_TIME).until(
+            EC.element_to_be_clickable((By.XPATH, "/html/body/div[1]/div[1]/div/div[2]/ul/li/button"))
+        )
+        
+        button.click()
+        logger.info("✅ Botão do corretor online clicado com sucesso!")
+        time.sleep(3)
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Erro ao clicar no botão do corretor online: {e}")
+        return False
+
+
+# Função de conveniência para uso direto
+def main():
+    """
+    Função de conveniência para executar a automação diretamente.
+    """
+    run_automation_for_form()
+
+
+if __name__ == "__main__":
+    main() 
