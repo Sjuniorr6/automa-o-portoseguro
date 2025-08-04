@@ -51,12 +51,19 @@ def trigger_automation_on_form_save(sender, instance, created, **kwargs):
             def run_automation_async():
                 try:
                     logger.info(f"🔄 Iniciando automação assíncrona para formulário ID: {instance.id}")
-                    success = run_automation_for_form(form_data, automation_log)
+                    success = run_automation_for_form(form_data)
                     
                     if success:
                         logger.info(f"✅ Automação concluída com sucesso para formulário ID: {instance.id}")
+                        # Atualizar log com sucesso
+                        automation_log.status = 'completed'
+                        automation_log.save()
                     else:
                         logger.error(f"❌ Falha na automação para formulário ID: {instance.id}")
+                        # Atualizar log com falha
+                        automation_log.status = 'failed'
+                        automation_log.error_message = 'Automação falhou'
+                        automation_log.save()
                         
                 except Exception as e:
                     logger.error(f"💥 Erro na automação assíncrona: {e}")
