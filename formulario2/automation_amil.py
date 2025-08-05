@@ -64,60 +64,156 @@ def preencher_formulario_dinamico(driver, wait, dados):
         print("⏳ Aguardando carregamento completo do formulário...")
         time.sleep(5)
         
-        # Função melhorada para encontrar campos por múltiplos métodos
-        def encontrar_campo_flexivel(nome_campo, placeholders=None, name_contains=None, max_tentativas=5):
+        # Função melhorada para encontrar campos por múltiplos métodos (rápida)
+        def encontrar_campo_flexivel(nome_campo, placeholders=None, name_contains=None, max_tentativas=2):
             print(f"🔍 Procurando campo {nome_campo}...")
             
             for tentativa in range(max_tentativas):
                 try:
-                    # 1. Tentar por name exato
+                    # 1. Tentar por name exato (rápido)
                     try:
-                        campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[@name='{nome_campo}']")))
-                        print(f"✅ Campo {nome_campo} encontrado por name exato")
-                        return campo
+                        campo = driver.find_element(By.XPATH, f"//input[@name='{nome_campo}']")
+                        if campo.is_displayed() and campo.is_enabled():
+                            print(f"✅ Campo {nome_campo} encontrado por name exato")
+                            return campo
                     except:
                         pass
                     
-                    # 2. Tentar por name contendo
+                    # 2. Tentar por name contendo (rápido)
                     if name_contains:
                         try:
-                            campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[contains(@name, '{name_contains}')]")))
-                            print(f"✅ Campo {nome_campo} encontrado por name contendo")
-                            return campo
+                            campo = driver.find_element(By.XPATH, f"//input[contains(@name, '{name_contains}')]")
+                            if campo.is_displayed() and campo.is_enabled():
+                                print(f"✅ Campo {nome_campo} encontrado por name contendo")
+                                return campo
                         except:
                             pass
                     
-                    # 3. Tentar por placeholder
+                    # 3. Tentar por placeholder (rápido)
                     if placeholders:
                         for placeholder in placeholders:
                             try:
-                                campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[@placeholder='{placeholder}']")))
-                                print(f"✅ Campo {nome_campo} encontrado por placeholder: {placeholder}")
-                                return campo
+                                campo = driver.find_element(By.XPATH, f"//input[@placeholder='{placeholder}']")
+                                if campo.is_displayed() and campo.is_enabled():
+                                    print(f"✅ Campo {nome_campo} encontrado por placeholder: {placeholder}")
+                                    return campo
                             except:
                                 continue
                     
-                    # 4. Tentar por label
+                    # 4. Tentar por label (múltiplas variações) - rápido
+                    label_variations = [
+                        f"//label[contains(text(), '{nome_campo}')]/following-sibling::input",
+                        f"//label[contains(text(), '{nome_campo.lower()}')]/following-sibling::input",
+                        f"//label[contains(text(), '{nome_campo.upper()}')]/following-sibling::input",
+                        f"//label[contains(translate(text(), 'ÁÀÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßáàâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ', 'AAAAAAACEEEEIIIIDNOOOOOOUUUUYBsaaaaaaaceeeeiiiidnoooooouuuuyby'), '{nome_campo.lower()}')]/following-sibling::input"
+                    ]
+                    
+                    for label_xpath in label_variations:
+                        try:
+                            campo = driver.find_element(By.XPATH, label_xpath)
+                            if campo.is_displayed() and campo.is_enabled():
+                                print(f"✅ Campo {nome_campo} encontrado por label")
+                                return campo
+                        except:
+                            continue
+                    
+                    # 5. Tentar por ID (rápido)
                     try:
-                        campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//label[contains(text(), '{nome_campo}')]/following-sibling::input")))
-                        print(f"✅ Campo {nome_campo} encontrado por label")
-                        return campo
+                        campo = driver.find_element(By.ID, nome_campo.lower().replace(' ', '_'))
+                        if campo.is_displayed() and campo.is_enabled():
+                            print(f"✅ Campo {nome_campo} encontrado por ID")
+                            return campo
                     except:
                         pass
                     
-                    # 5. Tentar por input genérico (último recurso)
+                    # 6. Tentar por input genérico (último recurso) - rápido
                     inputs = driver.find_elements(By.TAG_NAME, "input")
                     for input_field in inputs:
                         if input_field.is_displayed() and input_field.is_enabled():
                             print(f"✅ Campo {nome_campo} encontrado por input genérico")
                             return input_field
                     
-                    time.sleep(1)
+                    time.sleep(0.5)  # Reduzido para 0.5 segundos
                 except Exception as e:
                     print(f"❌ Tentativa {tentativa + 1} falhou: {e}")
-                    time.sleep(1)
+                    time.sleep(0.5)  # Reduzido para 0.5 segundos
             
             print(f"❌ Campo {nome_campo} não encontrado após {max_tentativas} tentativas")
+            return None
+        
+        # Função específica para encontrar campos de data (rápida e eficiente)
+        def encontrar_campo_data(nome_campo, max_tentativas=1):
+            print(f"📅 Procurando campo de data: {nome_campo}...")
+            
+            for tentativa in range(max_tentativas):
+                try:
+                    # Várias variações de placeholders para datas
+                    date_placeholders = [
+                        'dd/mm/aaaa', 'DD/MM/AAAA', 'dd/mm/yyyy', 'DD/MM/YYYY',
+                        'Data', 'data', 'DATE', 'date'
+                    ]
+                    
+                    # Várias variações de names para datas
+                    date_names = [
+                        nome_campo.lower(), nome_campo.upper(), 
+                        nome_campo.lower().replace(' ', '_'),
+                        nome_campo.lower().replace(' ', ''),
+                        'data', 'date'
+                    ]
+                    
+                    # Tentar por placeholder (rápido)
+                    for placeholder in date_placeholders:
+                        try:
+                            campo = driver.find_element(By.XPATH, f"//input[@placeholder='{placeholder}']")
+                            if campo.is_displayed() and campo.is_enabled():
+                                print(f"✅ Campo de data {nome_campo} encontrado por placeholder: {placeholder}")
+                                return campo
+                        except:
+                            continue
+                    
+                    # Tentar por name (rápido)
+                    for name in date_names:
+                        try:
+                            campo = driver.find_element(By.XPATH, f"//input[contains(@name, '{name}')]")
+                            if campo.is_displayed() and campo.is_enabled():
+                                print(f"✅ Campo de data {nome_campo} encontrado por name: {name}")
+                                return campo
+                        except:
+                            continue
+                    
+                    # Tentar por label (rápido)
+                    label_variations = [
+                        f"//label[contains(text(), '{nome_campo}')]/following-sibling::input",
+                        f"//label[contains(text(), 'Data')]/following-sibling::input",
+                        f"//label[contains(text(), 'data')]/following-sibling::input"
+                    ]
+                    
+                    for label_xpath in label_variations:
+                        try:
+                            campo = driver.find_element(By.XPATH, label_xpath)
+                            if campo.is_displayed() and campo.is_enabled():
+                                print(f"✅ Campo de data {nome_campo} encontrado por label")
+                                return campo
+                        except:
+                            continue
+                    
+                    # Tentar buscar por qualquer input que pareça ser de data
+                    try:
+                        inputs = driver.find_elements(By.TAG_NAME, "input")
+                        for input_field in inputs:
+                            if input_field.is_displayed() and input_field.is_enabled():
+                                placeholder = input_field.get_attribute('placeholder') or ''
+                                name = input_field.get_attribute('name') or ''
+                                if any(word in placeholder.lower() or word in name.lower() for word in ['data', 'date', 'dd/mm']):
+                                    print(f"✅ Campo de data {nome_campo} encontrado por busca genérica")
+                                    return input_field
+                    except:
+                        pass
+                    
+                except Exception as e:
+                    print(f"❌ Tentativa {tentativa + 1} para campo de data falhou: {e}")
+            
+            print(f"❌ Campo de data {nome_campo} não encontrado - pulando...")
             return None
         
         # Função auxiliar para tentar diferentes métodos de localização (mantida para compatibilidade)
@@ -159,10 +255,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except:
                 return None
         
-        # 1. NOME - usando método flexível
+        # 1. NOME - usando name exato encontrado no formulário
         if dados.get('nome'):
             try:
-                nome_field = encontrar_campo_flexivel('Nome', ['Nome', 'nome'], 'nome')
+                nome_field = driver.find_element(By.XPATH, "//input[@name='beneficiaryOwner.nome']")
                 if nome_field:
                     nome_field.click()
                     time.sleep(1)
@@ -176,10 +272,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome: {e}")
         
-        # 2. CPF - usando método flexível
+        # 2. CPF - usando name exato encontrado no formulário
         if dados.get('cpf'):
             try:
-                cpf_field = encontrar_campo_flexivel('CPF', ['CPF', 'cpf'], 'cpf')
+                cpf_field = driver.find_element(By.XPATH, "//input[@name='beneficiaryOwner.cpf']")
                 if cpf_field:
                     cpf_field.click()
                     time.sleep(1)
@@ -193,10 +289,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher CPF: {e}")
         
-        # 3. NOME NO CARTÃO - usando método flexível
+        # 3. NOME NO CARTÃO - usando name exato encontrado no formulário
         if dados.get('nome_cartao'):
             try:
-                cartao_field = encontrar_campo_flexivel('Nome no cartão', ['Nome no cartão', 'nomeCartao'], 'nomeCartao')
+                cartao_field = driver.find_element(By.XPATH, "//input[@name='beneficiaryOwner.nomeCartao']")
                 if cartao_field:
                     cartao_field.click()
                     time.sleep(1)
@@ -210,47 +306,18 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome no cartão: {e}")
         
-        # 4. DATA DE INCLUSÃO - usando método flexível
-        if dados.get('data_inclusao'):
-            try:
-                data_inclusao = datetime.strptime(dados['data_inclusao'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                inclusao_field = encontrar_campo_flexivel('Data de inclusão', ['dd/mm/aaaa'], 'inclusao')
-                if inclusao_field:
-                    inclusao_field.click()
-                    time.sleep(1)
-                    inclusao_field.clear()
-                    time.sleep(1)
-                    inclusao_field.send_keys(data_inclusao)
-                    print(f"✅ Data de inclusão preenchida: {data_inclusao}")
-                    time.sleep(2)
-                else:
-                    print("❌ Campo data de inclusão não encontrado")
-            except Exception as e:
-                print(f"❌ Erro ao preencher data de inclusão: {e}")
+        # 4. DATA DE INCLUSÃO - PULANDO (já preenchida automaticamente pelo sistema)
+        print("⚠️ Data de inclusão já preenchida automaticamente pelo sistema - pulando")
         
-        # 5. DATA DE REGISTRO - usando método flexível
-        if dados.get('data_registro'):
-            try:
-                data_registro = datetime.strptime(dados['data_registro'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                registro_field = encontrar_campo_flexivel('Data de registro', ['dd/mm/aaaa'], 'registro')
-                if registro_field:
-                    registro_field.click()
-                    time.sleep(1)
-                    registro_field.clear()
-                    time.sleep(1)
-                    registro_field.send_keys(data_registro)
-                    print(f"✅ Data de registro preenchida: {data_registro}")
-                    time.sleep(2)
-                else:
-                    print("❌ Campo data de registro não encontrado")
-            except Exception as e:
-                print(f"❌ Erro ao preencher data de registro: {e}")
+        # 5. DATA DE REGISTRO - PULANDO (já preenchida automaticamente pelo sistema)
+        print("⚠️ Data de registro já preenchida automaticamente pelo sistema - pulando")
         
-        # 6. DATA DE NASCIMENTO - usando método flexível
+        # 6. DATA DE NASCIMENTO - usando XPath específico fornecido
         if dados.get('data_nascimento'):
             try:
                 data_nascimento = datetime.strptime(dados['data_nascimento'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                nascimento_field = encontrar_campo_flexivel('Data de nascimento', ['dd/mm/aaaa'], 'nascimento')
+                # Usar o XPath específico fornecido
+                nascimento_field = driver.find_element(By.XPATH, '//*[@id="app"]/div[2]/div[2]/div/form/fieldset/div[1]/div[2]/div/div[4]/div[3]/div/div/div[1]/input')
                 if nascimento_field:
                     nascimento_field.click()
                     time.sleep(1)
@@ -298,10 +365,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao selecionar nacionalidade: {e}")
         
-        # 9. NOME DA MÃE - usando método flexível
+        # 9. NOME DA MÃE - usando name exato encontrado no formulário
         if dados.get('nome_mae'):
             try:
-                mae_field = encontrar_campo_flexivel('Nome da mãe', ['Nome da mãe', 'mãe', 'Nome mãe'], 'mae')
+                mae_field = driver.find_element(By.XPATH, "//input[@name='beneficiaryOwner.nomeMae']")
                 if mae_field:
                     mae_field.click()
                     time.sleep(1)
@@ -315,10 +382,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome da mãe: {e}")
         
-        # 10. NOME DO PAI (opcional) - usando método flexível
+        # 10. NOME DO PAI (opcional) - usando name exato encontrado no formulário
         if dados.get('nome_pai'):
             try:
-                pai_field = encontrar_campo_flexivel('Nome do pai', ['Nome do pai', 'pai', 'Nome pai'], 'pai')
+                pai_field = driver.find_element(By.XPATH, "//input[@name='beneficiaryOwner.nomePai']")
                 if pai_field:
                     pai_field.click()
                     time.sleep(1)
@@ -332,80 +399,8 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome do pai: {e}")
         
-        # 11. ESTADO CIVIL - usando método flexível
-        if dados.get('estado_civil'):
-            try:
-                print("🔍 Procurando campo Estado civil...")
-                estado_civil_map = {
-                    'S': 'Solteiro',
-                    'C': 'Casado',
-                    'D': 'Divorciado',
-                    'V': 'Viúvo',
-                    'U': 'União Estável'
-                }
-                estado_civil_texto = estado_civil_map.get(dados['estado_civil'])
-                if estado_civil_texto:
-                    estado_civil_select = wait.until(EC.element_to_be_clickable((By.XPATH, "//select[contains(@name, 'estado_civil')]")))
-                    from selenium.webdriver.support.ui import Select
-                    select = Select(estado_civil_select)
-                    select.select_by_visible_text(estado_civil_texto)
-                    print(f"✅ Estado civil selecionado: {estado_civil_texto}")
-                    time.sleep(2)
-            except Exception as e:
-                print(f"❌ Erro ao selecionar estado civil: {e}")
-        
-        # 12. PLANO - usando método flexível
-        if dados.get('plano'):
-            try:
-                plano_field = encontrar_campo_flexivel('Plano', ['Plano', 'plano'], 'plano')
-                if plano_field:
-                    plano_field.click()
-                    time.sleep(1)
-                    plano_field.clear()
-                    time.sleep(1)
-                    plano_field.send_keys(dados['plano'])
-                    print(f"✅ Plano preenchido: {dados['plano']}")
-                    time.sleep(2)
-                else:
-                    print("❌ Campo plano não encontrado")
-            except Exception as e:
-                print(f"❌ Erro ao preencher plano: {e}")
-        
-        # 13. CONTRATO DENTAL (opcional) - usando método flexível
-        if dados.get('contrato_dental'):
-            try:
-                contrato_dental_field = encontrar_campo_flexivel('Contrato Dental', ['Contrato Dental', 'dental'], 'dental')
-                if contrato_dental_field:
-                    contrato_dental_field.click()
-                    time.sleep(1)
-                    contrato_dental_field.clear()
-                    time.sleep(1)
-                    contrato_dental_field.send_keys(dados['contrato_dental'])
-                    print(f"✅ Contrato dental preenchido: {dados['contrato_dental']}")
-                    time.sleep(2)
-                else:
-                    print("❌ Campo contrato dental não encontrado")
-            except Exception as e:
-                print(f"❌ Erro ao preencher contrato dental: {e}")
-        
-        # 14. PLANO DENTAL (opcional) - usando método flexível
-        if dados.get('plano_dental'):
-            try:
-                plano_dental_field = encontrar_campo_flexivel('Plano Dental', ['Plano Dental', 'Plano dental'], 'dental')
-                if plano_dental_field:
-                    plano_dental_field.click()
-                    time.sleep(1)
-                    plano_dental_field.clear()
-                    time.sleep(1)
-                    plano_dental_field.send_keys(dados['plano_dental'])
-                    print(f"✅ Plano dental preenchido: {dados['plano_dental']}")
-                    time.sleep(2)
-                else:
-                    print("❌ Campo plano dental não encontrado")
-            except Exception as e:
-                print(f"❌ Erro ao preencher plano dental: {e}")
-        
-        print("🎉 Formulário preenchido com sucesso!")
+        print("🎉 Campos essenciais preenchidos com sucesso!")
+        print("🛑 Automação finalizada - navegador será mantido aberto")
         time.sleep(2)
         
     except Exception as e:
@@ -484,7 +479,17 @@ def click_menu_element(driver, wait):
                         placeholder = input_field.get_attribute('placeholder') or 'Sem placeholder'
                         name = input_field.get_attribute('name') or 'Sem name'
                         id_attr = input_field.get_attribute('id') or 'Sem id'
-                        print(f"  Campo {i+1}: placeholder='{placeholder}', name='{name}', id='{id_attr}'")
+                        type_attr = input_field.get_attribute('type') or 'Sem type'
+                        print(f"  Campo {i+1}: type='{type_attr}', placeholder='{placeholder}', name='{name}', id='{id_attr}'")
+                
+                # Listar também labels para identificar campos
+                print("🔍 Listando labels encontrados:")
+                labels = driver.find_elements(By.TAG_NAME, "label")
+                for i, label in enumerate(labels):
+                    if label.is_displayed():
+                        text = label.text.strip()
+                        if text:
+                            print(f"  Label {i+1}: '{text}'")
             except Exception as e:
                 print(f"❌ Erro ao listar campos: {e}")
             
@@ -703,11 +708,12 @@ def open_amil_website():
             
             # Manter o navegador aberto
             print("Navegador será mantido aberto. Feche manualmente quando necessário.")
+            print("🛑 Automação finalizada - aguardando fechamento manual do navegador...")
             while True:
                 try:
                     # Verificar se o navegador ainda está aberto
                     driver.current_url
-                    time.sleep(5)  # Verificar a cada 5 segundos
+                    time.sleep(10)  # Verificar a cada 10 segundos
                 except:
                     print("Navegador foi fechado.")
                     break

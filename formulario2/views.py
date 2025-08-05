@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect
 from django.views.generic import CreateView, ListView, DeleteView
 from django.contrib.auth.views import LoginView, LogoutView
@@ -26,8 +27,10 @@ class CustomLoginView(LoginView):
         return reverse_lazy('home')
     
     def form_invalid(self, form):
-        messages.error(self.request, 'Usuário ou senha incorretos!')
+        messages.error(self.request, 'Usuário ou senha incorretos! Verifique suas credenciais.')
         return super().form_invalid(form)
+    
+
 
 class CustomLogoutView(LogoutView):
     """
@@ -120,15 +123,7 @@ class FormularioAmilDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(request, 'Movimentação Amil removida com sucesso!')
         return super().delete(request, *args, **kwargs)
 
-class AutomationLogListView(ListView):
-    model = AutomationLog
-    template_name = 'formulario2/automation_logs.html'
-    context_object_name = 'automation_logs'
-    paginate_by = 20
 
-def api_viewer(request):
-    """View para renderizar o visualizador de dados da API"""
-    return render(request, 'formulario2/api_viewer.html')
 
 @method_decorator(csrf_exempt, name='dispatch')
 class Formulario2APIView(View):

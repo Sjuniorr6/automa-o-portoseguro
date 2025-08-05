@@ -122,6 +122,8 @@ LOGIN_URL = '/formulario2/login/'
 LOGIN_REDIRECT_URL = '/formulario2/'
 LOGOUT_REDIRECT_URL = '/formulario2/login/'
 
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
