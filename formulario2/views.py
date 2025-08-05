@@ -93,13 +93,13 @@ class FormularioAmilCreateView(LoginRequiredMixin, CreateView):
 class Formulario2ListView(LoginRequiredMixin, ListView):
     model = Formulario2
     template_name = 'formulario2/formulario2_list.html'
-    context_object_name = 'formularios'
-    ordering = ['-created_at']
+    context_object_name = 'formulario2_list'
+    ordering = ['-id']
 
 class FormularioAmilListView(LoginRequiredMixin, ListView):
     model = FormularioAmil
     template_name = 'formulario2/formulario_amil_list.html'
-    context_object_name = 'formularios'
+    context_object_name = 'formulario_amil_list'
     ordering = ['-created_at']
 
 class AutomationLogListView(ListView):
