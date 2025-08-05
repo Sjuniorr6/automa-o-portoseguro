@@ -16,12 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 from formulario2.views import (
     Formulario2APIView, Formulario2DetailAPIView,
     FormularioAmilAPIView, FormularioAmilDetailAPIView
 )
 
+def redirect_to_login(request):
+    """Redireciona a URL raiz para a página de login"""
+    return redirect('login')
+
 urlpatterns = [
+    # Redirecionar raiz para login
+    path('', redirect_to_login, name='root'),
+    
     path('admin/', admin.site.urls),
     path('formulario2/', include('formulario2.urls')),
     

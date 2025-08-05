@@ -1,22 +1,48 @@
-from django.shortcuts import render
-from .models import Formulario2, FormularioAmil, AutomationLog
-from .forms import Formulario2Form, FormularioAmilForm
+from django.shortcuts import render, redirect
 from django.views.generic import CreateView, ListView
-from django.urls import reverse_lazy
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-import json
+from django.urls import reverse_lazy
+from django.views import View
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from .models import Formulario2, FormularioAmil, AutomationLog
+from .forms import Formulario2Form, FormularioAmilForm, LoginForm
 from .automation_amil import start_amil_automation
 
 # Create your views here.
+class CustomLoginView(LoginView):
+    """
+    View personalizada de login
+    """
+    template_name = 'formulario2/login.html'
+    form_class = LoginForm
+    redirect_authenticated_user = True
+    
+    def get_success_url(self):
+        return reverse_lazy('home')
+    
+    def form_invalid(self, form):
+        messages.error(self.request, 'Usuário ou senha incorretos!')
+        return super().form_invalid(form)
+
+class CustomLogoutView(LogoutView):
+    """
+    View personalizada de logout
+    """
+    next_page = 'login'
+
+@login_required
 def home_view(request):
-    """Página inicial com os dois botões de formulário"""
+    """
+    Página inicial - protegida por login
+    """
     return render(request, 'formulario2/home.html')
 
-class Formulario2CreateView(CreateView):
+class Formulario2CreateView(LoginRequiredMixin, CreateView):
     model = Formulario2
     form_class = Formulario2Form
     template_name = 'formulario2/formulario2.html'
@@ -35,7 +61,7 @@ class Formulario2CreateView(CreateView):
                 messages.error(self.request, f'Erro no campo {field}: {error}')
         return super().form_invalid(form)
 
-class FormularioAmilCreateView(CreateView):
+class FormularioAmilCreateView(LoginRequiredMixin, CreateView):
     model = FormularioAmil
     form_class = FormularioAmilForm
     template_name = 'formulario2/formulario_amil.html'
@@ -64,15 +90,17 @@ class FormularioAmilCreateView(CreateView):
                 messages.error(self.request, f'Erro no campo {field}: {error}')
         return super().form_invalid(form)
 
-class Formulario2ListView(ListView):
+class Formulario2ListView(LoginRequiredMixin, ListView):
     model = Formulario2
     template_name = 'formulario2/formulario2_list.html'
-    context_object_name = 'formulario2_list'
+    context_object_name = 'formularios'
+    ordering = ['-created_at']
 
-class FormularioAmilListView(ListView):
+class FormularioAmilListView(LoginRequiredMixin, ListView):
     model = FormularioAmil
     template_name = 'formulario2/formulario_amil_list.html'
-    context_object_name = 'formulario_amil_list'
+    context_object_name = 'formularios'
+    ordering = ['-created_at']
 
 class AutomationLogListView(ListView):
     model = AutomationLog
@@ -85,7 +113,7 @@ def api_viewer(request):
     return render(request, 'formulario2/api_viewer.html')
 
 @method_decorator(csrf_exempt, name='dispatch')
-class Formulario2APIView(View):
+class Formulario2APIView(LoginRequiredMixin, View):
     """
     API endpoint para gerenciar dados do Formulario2
     GET: Retorna todos os registros
@@ -166,7 +194,7 @@ class Formulario2APIView(View):
             }, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class FormularioAmilAPIView(View):
+class FormularioAmilAPIView(LoginRequiredMixin, View):
     """
     API endpoint para gerenciar dados do FormularioAmil
     GET: Retorna todos os registros
@@ -253,108 +281,68 @@ class FormularioAmilAPIView(View):
             }, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class Formulario2DetailAPIView(View):
+class Formulario2DetailAPIView(LoginRequiredMixin, View):
     """
-    API endpoint para gerenciar um registro específico
+    API endpoint para gerenciar um registro específico do Formulario2
     GET: Retorna um registro específico
     PUT: Atualiza um registro
     DELETE: Remove um registro
     """
-    
     def get(self, request, pk):
-        """Retorna um registro específico"""
         try:
             formulario = Formulario2.objects.get(pk=pk)
             data = {
-                'id': formulario.id,
-                'nomeCompleto': formulario.nomeCompleto,
-                'nomeSocial': formulario.nomeSocial or '',
-                'dataNascimento': formulario.dataNascimento.strftime('%Y-%m-%d') if formulario.dataNascimento else None,
-                'genero': formulario.genero,
-                'estadoCivil': formulario.estadoCivil,
-                'rg': formulario.rg,
-                'cpf': formulario.cpf,
-                'orgaoEmissor': formulario.orgaoEmissor,
-                'dataEmissao': formulario.dataEmissao.strftime('%Y-%m-%d') if formulario.dataEmissao else None,
-                'telefone': formulario.telefone,
-                'email': formulario.email,
-                'nomeMae': formulario.nomeMae,
-            }
-            
-            return JsonResponse({
                 'success': True,
-                'data': data
-            })
-            
+                'data': {
+                    'id': formulario.id,
+                    'nomeCompleto': formulario.nomeCompleto,
+                    'cpf': formulario.cpf,
+                    'dataNascimento': formulario.dataNascimento.strftime('%Y-%m-%d') if formulario.dataNascimento else None,
+                    'email': formulario.email,
+                    'telefone': formulario.telefone,
+                    'endereco': formulario.endereco,
+                    'cidade': formulario.cidade,
+                    'estado': formulario.estado,
+                    'cep': formulario.cep,
+                    'created_at': formulario.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': formulario.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            }
+            return JsonResponse(data)
         except Formulario2.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Registro não encontrado'
-            }, status=404)
+            return JsonResponse({'success': False, 'error': 'Formulário não encontrado'}, status=404)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
     def put(self, request, pk):
-        """Atualiza um registro"""
         try:
-            formulario = Formulario2.objects.get(pk=pk)
+            import json
             data = json.loads(request.body)
+            formulario = Formulario2.objects.get(pk=pk)
             
-            # Atualizar campos
             for field, value in data.items():
                 if hasattr(formulario, field):
                     setattr(formulario, field, value)
             
             formulario.save()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Registro atualizado com sucesso'
-            })
-            
+            return JsonResponse({'success': True, 'message': 'Formulário atualizado com sucesso'})
         except Formulario2.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Registro não encontrado'
-            }, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({
-                'success': False,
-                'error': 'JSON inválido'
-            }, status=400)
+            return JsonResponse({'success': False, 'error': 'Formulário não encontrado'}, status=404)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
-    
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
     def delete(self, request, pk):
-        """Remove um registro"""
         try:
             formulario = Formulario2.objects.get(pk=pk)
             formulario.delete()
-            
-            return JsonResponse({
-                'success': True,
-                'message': 'Registro removido com sucesso'
-            })
-            
+            return JsonResponse({'success': True, 'message': 'Formulário removido com sucesso'})
         except Formulario2.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'Registro não encontrado'
-            }, status=404)
+            return JsonResponse({'success': False, 'error': 'Formulário não encontrado'}, status=404)
         except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            }, status=500)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class FormularioAmilDetailAPIView(View):
+class FormularioAmilDetailAPIView(LoginRequiredMixin, View):
     """
     API endpoint para gerenciar um registro específico do FormularioAmil
     GET: Retorna um registro específico

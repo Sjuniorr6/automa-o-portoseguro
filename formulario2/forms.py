@@ -1,5 +1,31 @@
 from django import forms
+from django.contrib.auth.forms import AuthenticationForm
 from .models import Formulario2, FormularioAmil
+
+class LoginForm(AuthenticationForm):
+    """
+    Formulário de login personalizado
+    """
+    username = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Usuário',
+                'required': 'required'
+            }
+        ),
+        label='Usuário'
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Senha',
+                'required': 'required'
+            }
+        ),
+        label='Senha'
+    )
 
 class Formulario2Form(forms.ModelForm):
     class Meta:

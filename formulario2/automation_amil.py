@@ -21,48 +21,36 @@ def buscar_dados_formulario():
         print("Buscando dados do formulário na API...")
         response = requests.get('http://127.0.0.1:8000/api/amil/')
         
+        print(f"Status da API: {response.status_code}")
+        
         if response.status_code == 200:
             data = response.json()
+            print(f"Total de registros na API: {data.get('count', 0)}")
+            
             if data['success'] and data['count'] > 0:
-                # Pega o último registro (mais recente) - último da lista
-                formulario = data['data'][-1]  # Mudança aqui: [-1] pega o último elemento
-                print(f"Dados encontrados para: {formulario['nome']}")
-                print(f"ID do registro: {formulario['id']}")
+                # Listar todos os registros para debug
+                print("📋 Listando todos os registros:")
+                for i, registro in enumerate(data['data']):
+                    print(f"  [{i}] ID: {registro['id']} - Nome: {registro['nome']} - Created: {registro.get('created_at', 'N/A')}")
+                
+                # Pega o PRIMEIRO registro (mais recente) - primeiro da lista
+                formulario = data['data'][0]  # Mudança aqui: [0] pega o primeiro elemento (mais recente)
+                print(f"✅ PRIMEIRO REGISTRO SELECIONADO (MAIS RECENTE):")
+                print(f"   ID: {formulario['id']}")
+                print(f"   Nome: {formulario['nome']}")
+                print(f"   CPF: {formulario['cpf']}")
+                print(f"   Created: {formulario.get('created_at', 'N/A')}")
                 return formulario
             else:
-                print("Nenhum formulário encontrado na API")
+                print("❌ Nenhum formulário encontrado na API")
                 return None
         else:
-            print(f"Erro ao buscar dados: {response.status_code}")
+            print(f"❌ Erro ao buscar dados: {response.status_code}")
             return None
             
     except Exception as e:
-        print(f"Erro ao conectar com a API: {e}")
-        print("Usando dados de teste...")
-        
-        # Dados de teste baseados no JSON fornecido
-        dados_teste = {
-            'id': 1,
-            'nome': 'SIDNEI APARECIDO DOS SANTOS JUNIOR',
-            'cpf': '422.357.688-73',
-            'nome_cartao': 'SIDNEI APARECIDO DOS SANTOS JUNIOR',
-            'data_inclusao': '1993-06-12',
-            'data_registro': '1993-06-12',
-            'data_nascimento': '1993-06-12',
-            'sexo': 'M',
-            'nacionalidade': 'B',
-            'nome_mae': 'ana caroline alves',
-            'nome_pai': 'ana caroline alves',
-            'estado_civil': 'C',
-            'plano': 'TESTE',
-            'contrato_dental': 'TESTE',
-            'plano_dental': 'TESTE',
-            'created_at': '2025-08-05 16:00:13',
-            'updated_at': '2025-08-05 16:00:13'
-        }
-        
-        print(f"Dados de teste carregados para: {dados_teste['nome']}")
-        return dados_teste
+        print(f"❌ Erro ao conectar com a API: {e}")
+        return None
 
 def preencher_formulario_dinamico(driver, wait, dados):
     """
@@ -106,11 +94,19 @@ def preencher_formulario_dinamico(driver, wait, dados):
                     time.sleep(1)
             return None
         
+        # Função específica para encontrar campos por name exato
+        def encontrar_campo_por_name(name_exato):
+            try:
+                campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[@name='{name_exato}']")))
+                return campo
+            except:
+                return None
+        
         # 1. NOME
         if dados.get('nome'):
             try:
                 print("🔍 Procurando campo Nome...")
-                nome_field = encontrar_campo_texto(['Nome completo', 'Nome', 'Nome do titular'])
+                nome_field = encontrar_campo_por_name('beneficiaryOwner.nome')
                 if nome_field:
                     nome_field.click()
                     time.sleep(1)
@@ -128,7 +124,7 @@ def preencher_formulario_dinamico(driver, wait, dados):
         if dados.get('cpf'):
             try:
                 print("🔍 Procurando campo CPF...")
-                cpf_field = encontrar_campo_texto(['999.999.999-99', 'CPF', 'cpf'])
+                cpf_field = encontrar_campo_por_name('beneficiaryOwner.cpf')
                 if cpf_field:
                     cpf_field.click()
                     time.sleep(1)
@@ -146,7 +142,7 @@ def preencher_formulario_dinamico(driver, wait, dados):
         if dados.get('nome_cartao'):
             try:
                 print("🔍 Procurando campo Nome no cartão...")
-                cartao_field = encontrar_campo_texto(['Nome no cartão', 'cartão', 'Nome cartão'])
+                cartao_field = encontrar_campo_por_name('beneficiaryOwner.nomeCartao')
                 if cartao_field:
                     cartao_field.click()
                     time.sleep(1)
@@ -448,54 +444,8 @@ def click_menu_element(driver, wait):
             
             preencher_formulario_dinamico(driver, wait, dados_formulario)
         else:
-            print("⚠️ Nenhum dado encontrado na API para preencher o formulário")
-            print("🔄 Tentando usar dados de teste...")
-            
-            # Usar dados de teste diretamente
-            dados_teste = {
-                'id': 1,
-                'nome': 'SIDNEI APARECIDO DOS SANTOS JUNIOR',
-                'cpf': '422.357.688-73',
-                'nome_cartao': 'SIDNEI APARECIDO DOS SANTOS JUNIOR',
-                'data_inclusao': '1993-06-12',
-                'data_registro': '1993-06-12',
-                'data_nascimento': '1993-06-12',
-                'sexo': 'M',
-                'nacionalidade': 'B',
-                'nome_mae': 'ana caroline alves',
-                'nome_pai': 'ana caroline alves',
-                'estado_civil': 'C',
-                'plano': 'TESTE',
-                'contrato_dental': 'TESTE',
-                'plano_dental': 'TESTE',
-                'created_at': '2025-08-05 16:00:13',
-                'updated_at': '2025-08-05 16:00:13'
-            }
-            
-            print(f"✅ Dados de teste carregados para: {dados_teste['nome']}")
-            
-            # Capturar screenshot para debug
-            try:
-                screenshot_path = f"screenshots/formulario_amil_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-                driver.save_screenshot(screenshot_path)
-                print(f"📸 Screenshot salvo: {screenshot_path}")
-            except Exception as e:
-                print(f"❌ Erro ao salvar screenshot: {e}")
-            
-            # Debug: listar todos os campos de input
-            try:
-                print("🔍 Listando campos de input encontrados:")
-                inputs = driver.find_elements(By.TAG_NAME, "input")
-                for i, input_field in enumerate(inputs):
-                    if input_field.is_displayed():
-                        placeholder = input_field.get_attribute('placeholder') or 'Sem placeholder'
-                        name = input_field.get_attribute('name') or 'Sem name'
-                        id_attr = input_field.get_attribute('id') or 'Sem id'
-                        print(f"  Campo {i+1}: placeholder='{placeholder}', name='{name}', id='{id_attr}'")
-            except Exception as e:
-                print(f"❌ Erro ao listar campos: {e}")
-            
-            preencher_formulario_dinamico(driver, wait, dados_teste)
+            print("❌ Nenhum dado encontrado na API para preencher o formulário")
+            print("❌ Automação cancelada - sem dados disponíveis")
         
     except Exception as e:
         print(f"Erro ao clicar no elemento do menu: {e}")
