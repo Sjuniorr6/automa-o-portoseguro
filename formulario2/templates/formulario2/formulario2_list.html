@@ -1,19 +1,19 @@
 {% extends 'formulario2/base.html' %}
 
-{% block title %}Lista de Formulários Porto{% endblock %}
+{% block title %}Lista de Movimentações Porto{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
                     <h3 class="mb-0">
-                        <i class="fas fa-shield-alt me-2"></i>Formulários Porto Seguro
+                        <i class="fas fa-shield-alt me-2"></i>Movimentações Porto Seguro
                     </h3>
                     <div>
                         <a href="{% url 'formulario2_create' %}" class="btn btn-light btn-sm">
-                            <i class="fas fa-plus me-1"></i>Novo Formulário
+                            <i class="fas fa-plus me-1"></i>Nova Movimentação
                         </a>
                         <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm ms-2">
                             <i class="fas fa-home me-1"></i>Início
@@ -24,17 +24,17 @@
                     {% if formulario2_list %}
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead class="table-primary">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nome Completo</th>
-                                        <th>CPF</th>
-                                        <th>Email</th>
-                                        <th>Telefone</th>
-                                        <th>Gênero</th>
-                                        <th>Estado Civil</th>
-                                        <th>Data de Criação</th>
-                                        <th>Ações</th>
+                                        <th class="text-white">ID</th>
+                                        <th class="text-white">Nome Completo</th>
+                                        <th class="text-white">CPF</th>
+                                        <th class="text-white">Email</th>
+                                        <th class="text-white">Telefone</th>
+                                        <th class="text-white">Gênero</th>
+                                        <th class="text-white">Estado Civil</th>
+                                        <th class="text-white">Data de Nascimento</th>
+                                        <th class="text-white">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -67,26 +67,26 @@
                                         </td>
                                         <td>
                                             {% if formulario.genero == 'M' %}
-                                                <span class="badge bg-primary">Masculino</span>
+                                                <span class="badge bg-dark">Masculino</span>
                                             {% elif formulario.genero == 'F' %}
-                                                <span class="badge bg-pink">Feminino</span>
+                                                <span class="badge bg-secondary">Feminino</span>
                                             {% elif formulario.genero == 'O' %}
-                                                <span class="badge bg-info">Outro</span>
+                                                <span class="badge bg-light text-dark">Outro</span>
                                             {% else %}
                                                 <span class="badge bg-secondary">{{ formulario.get_genero_display }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if formulario.estadoCivil == 'S' %}
-                                                <span class="badge bg-success">Solteiro</span>
+                                                <span class="badge bg-light text-dark">Solteiro</span>
                                             {% elif formulario.estadoCivil == 'C' %}
-                                                <span class="badge bg-warning">Casado</span>
+                                                <span class="badge bg-secondary">Casado</span>
                                             {% elif formulario.estadoCivil == 'D' %}
-                                                <span class="badge bg-danger">Divorciado</span>
+                                                <span class="badge bg-dark">Divorciado</span>
                                             {% elif formulario.estadoCivil == 'V' %}
-                                                <span class="badge bg-dark">Viúvo</span>
+                                                <span class="badge bg-secondary">Viúvo</span>
                                             {% elif formulario.estadoCivil == 'U' %}
-                                                <span class="badge bg-info">União Estável</span>
+                                                <span class="badge bg-light text-dark">União Estável</span>
                                             {% else %}
                                                 <span class="badge bg-secondary">{{ formulario.get_estadoCivil_display }}</span>
                                             {% endif %}
@@ -98,76 +98,21 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                <button type="button" class="btn btn-outline-dark btn-sm" 
                                                         data-bs-toggle="modal" 
-                                                        data-bs-target="#modal{{ formulario.id }}">
+                                                        data-bs-target="#detailModal{{ formulario.id }}"
+                                                        title="Ver Detalhes">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <a href="#" class="btn btn-outline-warning btn-sm" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteModal{{ formulario.id }}"
+                                                        title="Excluir">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    
-                                    <!-- Modal para detalhes -->
-                                    <div class="modal fade" id="modal{{ formulario.id }}" tabindex="-1">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-primary text-white">
-                                                    <h5 class="modal-title">
-                                                        <i class="fas fa-user me-2"></i>Detalhes do Formulário
-                                                    </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <h6 class="text-primary">Informações Pessoais</h6>
-                                                            <p><strong>Nome Completo:</strong> {{ formulario.nomeCompleto }}</p>
-                                                            {% if formulario.nomeSocial %}
-                                                                <p><strong>Nome Social:</strong> {{ formulario.nomeSocial }}</p>
-                                                            {% endif %}
-                                                            <p><strong>CPF:</strong> {{ formulario.cpf }}</p>
-                                                            <p><strong>RG:</strong> {{ formulario.rg }}</p>
-                                                            <p><strong>Órgão Emissor:</strong> {{ formulario.orgaoEmissor }}</p>
-                                                            <p><strong>Data de Emissão:</strong> 
-                                                                {% if formulario.dataEmissao %}
-                                                                    {{ formulario.dataEmissao|date:"d/m/Y" }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                            <p><strong>Data de Nascimento:</strong> 
-                                                                {% if formulario.dataNascimento %}
-                                                                    {{ formulario.dataNascimento|date:"d/m/Y" }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <h6 class="text-primary">Contato</h6>
-                                                            <p><strong>Email:</strong> {{ formulario.email }}</p>
-                                                            <p><strong>Telefone:</strong> {{ formulario.telefone }}</p>
-                                                            
-                                                            <h6 class="text-primary mt-3">Informações Demográficas</h6>
-                                                            <p><strong>Gênero:</strong> {{ formulario.get_genero_display }}</p>
-                                                            <p><strong>Estado Civil:</strong> {{ formulario.get_estadoCivil_display }}</p>
-                                                            <p><strong>Nome da Mãe:</strong> {{ formulario.nomeMae }}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                                                    <a href="#" class="btn btn-primary">Editar</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -207,10 +152,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">Nenhum formulário encontrado</h4>
-                            <p class="text-muted">Ainda não há formulários Porto cadastrados no sistema.</p>
-                            <a href="{% url 'formulario2_create' %}" class="btn btn-primary">
-                                <i class="fas fa-plus me-2"></i>Criar Primeiro Formulário
+                            <h4 class="text-muted">Nenhuma movimentação encontrada</h4>
+                            <p class="text-muted">Ainda não há movimentações Porto cadastradas no sistema.</p>
+                            <a href="{% url 'formulario2_create' %}" class="btn btn-dark">
+                                <i class="fas fa-plus me-2"></i>Criar Primeira Movimentação
                             </a>
                         </div>
                     {% endif %}
@@ -220,57 +165,200 @@
     </div>
 </div>
 
+<!-- Detail Modals -->
+{% for formulario in formulario2_list %}
+<div class="modal fade" id="detailModal{{ formulario.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ formulario.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="detailModalLabel{{ formulario.id }}">
+                    <i class="fas fa-user me-2"></i>Detalhes da Movimentação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-dark fw-bold mb-3">
+                            <i class="fas fa-user-circle me-2"></i>Informações Pessoais
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome Completo:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nomeCompleto }}</p>
+                        </div>
+                        {% if formulario.nomeSocial %}
+                        <div class="mb-3">
+                            <small class="text-muted">Nome Social:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nomeSocial }}</p>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <small class="text-muted">CPF:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.cpf }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">RG:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.rg }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Órgão Emissor:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.orgaoEmissor }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Data de Emissão:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.dataEmissao %}
+                                    {{ formulario.dataEmissao|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Data de Nascimento:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.dataNascimento %}
+                                    {{ formulario.dataNascimento|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-dark fw-bold mb-3">
+                            <i class="fas fa-phone me-2"></i>Contato
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Email:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.email }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Telefone:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.telefone }}</p>
+                        </div>
+                        
+                        <h6 class="text-dark fw-bold mb-3 mt-4">
+                            <i class="fas fa-chart-pie me-2"></i>Informações Demográficas
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Gênero:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.get_genero_display }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Estado Civil:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.get_estadoCivil_display }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome da Mãe:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nomeMae }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Delete Confirmation Modals -->
+{% for formulario in formulario2_list %}
+<div class="modal fade" id="deleteModal{{ formulario.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ formulario.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel{{ formulario.id }}">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-user-times fa-3x text-danger mb-3"></i>
+                    <h6 class="text-danger fw-bold">Tem certeza que deseja excluir esta movimentação?</h6>
+                    <p class="text-muted mb-0">Esta ação não pode ser desfeita.</p>
+                </div>
+                <div class="alert alert-warning" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle me-2 mt-1"></i>
+                        <div>
+                            <strong>Movimentação:</strong> {{ formulario.nomeCompleto }}<br>
+                            <strong>CPF:</strong> {{ formulario.cpf }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <a href="{% url 'formulario2_delete' formulario.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i>Sim, Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 <style>
 .table th {
     border-top: none;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.5px;
+    color: #ffffff;
 }
 
 .table td {
     vertical-align: middle;
+    border-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
 }
 
 .badge {
     font-size: 10px;
-    padding: 5px 8px;
-}
-
-.badge.bg-pink {
-    background-color: #e91e63 !important;
+    padding: 6px 10px;
+    border-radius: 6px;
 }
 
 .btn-group .btn {
-    border-radius: 4px;
-    margin-right: 2px;
+    border-radius: 6px;
+    margin-right: 3px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .btn-group .btn:last-child {
     margin-right: 0;
 }
 
-.modal-header {
-    border-radius: 8px 8px 0 0;
-}
-
-.modal-content {
-    border: none;
-    border-radius: 8px;
-}
-
 .table-responsive {
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .card {
     border: none;
-    border-radius: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .card-header {
-    border-radius: 15px 15px 0 0 !important;
+    border-radius: 16px 16px 0 0 !important;
     border-bottom: none;
 }
 </style>

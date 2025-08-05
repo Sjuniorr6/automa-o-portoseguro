@@ -57,13 +57,70 @@ def preencher_formulario_dinamico(driver, wait, dados):
     Preenche o formulário com os dados da API
     """
     try:
-        print("Preenchendo formulário com dados da API...")
-        print(f"Dados recebidos: {dados}")
+        print("🎯 Iniciando preenchimento dinâmico do formulário...")
+        print(f"📋 Dados recebidos da API: {dados}")
         
         # Aguardar mais tempo para o formulário carregar completamente
+        print("⏳ Aguardando carregamento completo do formulário...")
         time.sleep(5)
         
-        # Função auxiliar para tentar diferentes métodos de localização
+        # Função melhorada para encontrar campos por múltiplos métodos
+        def encontrar_campo_flexivel(nome_campo, placeholders=None, name_contains=None, max_tentativas=5):
+            print(f"🔍 Procurando campo {nome_campo}...")
+            
+            for tentativa in range(max_tentativas):
+                try:
+                    # 1. Tentar por name exato
+                    try:
+                        campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[@name='{nome_campo}']")))
+                        print(f"✅ Campo {nome_campo} encontrado por name exato")
+                        return campo
+                    except:
+                        pass
+                    
+                    # 2. Tentar por name contendo
+                    if name_contains:
+                        try:
+                            campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[contains(@name, '{name_contains}')]")))
+                            print(f"✅ Campo {nome_campo} encontrado por name contendo")
+                            return campo
+                        except:
+                            pass
+                    
+                    # 3. Tentar por placeholder
+                    if placeholders:
+                        for placeholder in placeholders:
+                            try:
+                                campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//input[@placeholder='{placeholder}']")))
+                                print(f"✅ Campo {nome_campo} encontrado por placeholder: {placeholder}")
+                                return campo
+                            except:
+                                continue
+                    
+                    # 4. Tentar por label
+                    try:
+                        campo = wait.until(EC.element_to_be_clickable((By.XPATH, f"//label[contains(text(), '{nome_campo}')]/following-sibling::input")))
+                        print(f"✅ Campo {nome_campo} encontrado por label")
+                        return campo
+                    except:
+                        pass
+                    
+                    # 5. Tentar por input genérico (último recurso)
+                    inputs = driver.find_elements(By.TAG_NAME, "input")
+                    for input_field in inputs:
+                        if input_field.is_displayed() and input_field.is_enabled():
+                            print(f"✅ Campo {nome_campo} encontrado por input genérico")
+                            return input_field
+                    
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"❌ Tentativa {tentativa + 1} falhou: {e}")
+                    time.sleep(1)
+            
+            print(f"❌ Campo {nome_campo} não encontrado após {max_tentativas} tentativas")
+            return None
+        
+        # Função auxiliar para tentar diferentes métodos de localização (mantida para compatibilidade)
         def encontrar_campo_texto(placeholders, name_contains=None, max_tentativas=3):
             for tentativa in range(max_tentativas):
                 try:
@@ -102,11 +159,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except:
                 return None
         
-        # 1. NOME
+        # 1. NOME - usando método flexível
         if dados.get('nome'):
             try:
-                print("🔍 Procurando campo Nome...")
-                nome_field = encontrar_campo_por_name('beneficiaryOwner.nome')
+                nome_field = encontrar_campo_flexivel('Nome', ['Nome', 'nome'], 'nome')
                 if nome_field:
                     nome_field.click()
                     time.sleep(1)
@@ -120,11 +176,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome: {e}")
         
-        # 2. CPF
+        # 2. CPF - usando método flexível
         if dados.get('cpf'):
             try:
-                print("🔍 Procurando campo CPF...")
-                cpf_field = encontrar_campo_por_name('beneficiaryOwner.cpf')
+                cpf_field = encontrar_campo_flexivel('CPF', ['CPF', 'cpf'], 'cpf')
                 if cpf_field:
                     cpf_field.click()
                     time.sleep(1)
@@ -138,11 +193,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher CPF: {e}")
         
-        # 3. NOME NO CARTÃO
+        # 3. NOME NO CARTÃO - usando método flexível
         if dados.get('nome_cartao'):
             try:
-                print("🔍 Procurando campo Nome no cartão...")
-                cartao_field = encontrar_campo_por_name('beneficiaryOwner.nomeCartao')
+                cartao_field = encontrar_campo_flexivel('Nome no cartão', ['Nome no cartão', 'nomeCartao'], 'nomeCartao')
                 if cartao_field:
                     cartao_field.click()
                     time.sleep(1)
@@ -156,12 +210,11 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome no cartão: {e}")
         
-        # 4. DATA DE INCLUSÃO
+        # 4. DATA DE INCLUSÃO - usando método flexível
         if dados.get('data_inclusao'):
             try:
-                print("🔍 Procurando campo Data de inclusão...")
                 data_inclusao = datetime.strptime(dados['data_inclusao'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                inclusao_field = encontrar_campo_texto(['dd/mm/aaaa'], 'inclusao')
+                inclusao_field = encontrar_campo_flexivel('Data de inclusão', ['dd/mm/aaaa'], 'inclusao')
                 if inclusao_field:
                     inclusao_field.click()
                     time.sleep(1)
@@ -175,12 +228,11 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher data de inclusão: {e}")
         
-        # 5. DATA DE REGISTRO
+        # 5. DATA DE REGISTRO - usando método flexível
         if dados.get('data_registro'):
             try:
-                print("🔍 Procurando campo Data de registro...")
                 data_registro = datetime.strptime(dados['data_registro'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                registro_field = encontrar_campo_texto(['dd/mm/aaaa'], 'registro')
+                registro_field = encontrar_campo_flexivel('Data de registro', ['dd/mm/aaaa'], 'registro')
                 if registro_field:
                     registro_field.click()
                     time.sleep(1)
@@ -194,12 +246,11 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher data de registro: {e}")
         
-        # 6. DATA DE NASCIMENTO
+        # 6. DATA DE NASCIMENTO - usando método flexível
         if dados.get('data_nascimento'):
             try:
-                print("🔍 Procurando campo Data de nascimento...")
                 data_nascimento = datetime.strptime(dados['data_nascimento'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                nascimento_field = encontrar_campo_texto(['dd/mm/aaaa'], 'nascimento')
+                nascimento_field = encontrar_campo_flexivel('Data de nascimento', ['dd/mm/aaaa'], 'nascimento')
                 if nascimento_field:
                     nascimento_field.click()
                     time.sleep(1)
@@ -213,7 +264,7 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher data de nascimento: {e}")
         
-        # 7. SEXO
+        # 7. SEXO - usando método flexível
         if dados.get('sexo'):
             try:
                 print("🔍 Procurando campo Sexo...")
@@ -230,7 +281,7 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao selecionar sexo: {e}")
         
-        # 8. NACIONALIDADE
+        # 8. NACIONALIDADE - usando método flexível
         if dados.get('nacionalidade'):
             try:
                 print("🔍 Procurando campo Nacionalidade...")
@@ -247,11 +298,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao selecionar nacionalidade: {e}")
         
-        # 9. NOME DA MÃE
+        # 9. NOME DA MÃE - usando método flexível
         if dados.get('nome_mae'):
             try:
-                print("🔍 Procurando campo Nome da mãe...")
-                mae_field = encontrar_campo_texto(['Nome da mãe', 'mãe', 'Nome mãe'])
+                mae_field = encontrar_campo_flexivel('Nome da mãe', ['Nome da mãe', 'mãe', 'Nome mãe'], 'mae')
                 if mae_field:
                     mae_field.click()
                     time.sleep(1)
@@ -265,11 +315,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome da mãe: {e}")
         
-        # 10. NOME DO PAI (opcional)
+        # 10. NOME DO PAI (opcional) - usando método flexível
         if dados.get('nome_pai'):
             try:
-                print("🔍 Procurando campo Nome do pai...")
-                pai_field = encontrar_campo_texto(['Nome do pai', 'pai', 'Nome pai'])
+                pai_field = encontrar_campo_flexivel('Nome do pai', ['Nome do pai', 'pai', 'Nome pai'], 'pai')
                 if pai_field:
                     pai_field.click()
                     time.sleep(1)
@@ -283,7 +332,7 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher nome do pai: {e}")
         
-        # 11. ESTADO CIVIL
+        # 11. ESTADO CIVIL - usando método flexível
         if dados.get('estado_civil'):
             try:
                 print("🔍 Procurando campo Estado civil...")
@@ -305,11 +354,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao selecionar estado civil: {e}")
         
-        # 12. PLANO
+        # 12. PLANO - usando método flexível
         if dados.get('plano'):
             try:
-                print("🔍 Procurando campo Plano...")
-                plano_field = encontrar_campo_texto(['Plano', 'plano'])
+                plano_field = encontrar_campo_flexivel('Plano', ['Plano', 'plano'], 'plano')
                 if plano_field:
                     plano_field.click()
                     time.sleep(1)
@@ -323,11 +371,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher plano: {e}")
         
-        # 13. CONTRATO DENTAL (opcional)
+        # 13. CONTRATO DENTAL (opcional) - usando método flexível
         if dados.get('contrato_dental'):
             try:
-                print("🔍 Procurando campo Contrato Dental...")
-                contrato_dental_field = encontrar_campo_texto(['Contrato Dental', 'dental'])
+                contrato_dental_field = encontrar_campo_flexivel('Contrato Dental', ['Contrato Dental', 'dental'], 'dental')
                 if contrato_dental_field:
                     contrato_dental_field.click()
                     time.sleep(1)
@@ -341,11 +388,10 @@ def preencher_formulario_dinamico(driver, wait, dados):
             except Exception as e:
                 print(f"❌ Erro ao preencher contrato dental: {e}")
         
-        # 14. PLANO DENTAL (opcional)
+        # 14. PLANO DENTAL (opcional) - usando método flexível
         if dados.get('plano_dental'):
             try:
-                print("🔍 Procurando campo Plano Dental...")
-                plano_dental_field = encontrar_campo_texto(['Plano Dental', 'Plano dental'])
+                plano_dental_field = encontrar_campo_flexivel('Plano Dental', ['Plano Dental', 'Plano dental'], 'dental')
                 if plano_dental_field:
                     plano_dental_field.click()
                     time.sleep(1)

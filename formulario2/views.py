@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.views.generic import CreateView, ListView
+from django.views.generic import CreateView, ListView, DeleteView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -101,6 +101,24 @@ class FormularioAmilListView(LoginRequiredMixin, ListView):
     template_name = 'formulario2/formulario_amil_list.html'
     context_object_name = 'formulario_amil_list'
     ordering = ['-created_at']
+
+class Formulario2DeleteView(LoginRequiredMixin, DeleteView):
+    model = Formulario2
+    success_url = reverse_lazy('formulario2_list')
+    template_name = 'formulario2/formulario2_confirm_delete.html'
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Movimentação Porto removida com sucesso!')
+        return super().delete(request, *args, **kwargs)
+
+class FormularioAmilDeleteView(LoginRequiredMixin, DeleteView):
+    model = FormularioAmil
+    success_url = reverse_lazy('formulario_amil_list')
+    template_name = 'formulario2/formulario_amil_confirm_delete.html'
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Movimentação Amil removida com sucesso!')
+        return super().delete(request, *args, **kwargs)
 
 class AutomationLogListView(ListView):
     model = AutomationLog

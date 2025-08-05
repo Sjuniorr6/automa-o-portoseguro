@@ -1,19 +1,19 @@
 {% extends 'formulario2/base.html' %}
 
-{% block title %}Lista de Formulários Amil{% endblock %}
+{% block title %}Lista de Movimentações Amil{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
                     <h3 class="mb-0">
-                        <i class="fas fa-list me-2"></i>Formulários Amil
+                        <i class="fas fa-list me-2"></i>Movimentações Amil
                     </h3>
                     <div>
                         <a href="{% url 'formulario_amil_create' %}" class="btn btn-light btn-sm">
-                            <i class="fas fa-plus me-1"></i>Novo Formulário
+                            <i class="fas fa-plus me-1"></i>Nova Movimentação
                         </a>
                         <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm ms-2">
                             <i class="fas fa-home me-1"></i>Início
@@ -24,16 +24,16 @@
                     {% if formulario_amil_list %}
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead class="table-success">
+                                <thead class="table-dark">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Nome</th>
-                                        <th>CPF</th>
-                                        <th>Data de Nascimento</th>
-                                        <th>Sexo</th>
-                                        <th>Plano</th>
-                                        <th>Data de Criação</th>
-                                        <th>Ações</th>
+                                        <th class="text-white">ID</th>
+                                        <th class="text-white">Nome</th>
+                                        <th class="text-white">CPF</th>
+                                        <th class="text-white">Data de Nascimento</th>
+                                        <th class="text-white">Sexo</th>
+                                        <th class="text-white">Plano</th>
+                                        <th class="text-white">Data de Criação</th>
+                                        <th class="text-white">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -63,15 +63,15 @@
                                         </td>
                                         <td>
                                             {% if formulario.sexo == 'M' %}
-                                                <span class="badge bg-primary">Masculino</span>
+                                                <span class="badge bg-dark">Masculino</span>
                                             {% elif formulario.sexo == 'F' %}
-                                                <span class="badge bg-pink">Feminino</span>
+                                                <span class="badge bg-secondary">Feminino</span>
                                             {% else %}
-                                                <span class="badge bg-secondary">{{ formulario.get_sexo_display }}</span>
+                                                <span class="badge bg-light text-dark">{{ formulario.get_sexo_display }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <span class="badge bg-success">{{ formulario.plano }}</span>
+                                            <span class="badge bg-secondary">{{ formulario.plano }}</span>
                                             {% if formulario.plano_dental %}
                                                 <br>
                                                 <small class="text-muted">
@@ -86,116 +86,21 @@
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                <button type="button" class="btn btn-outline-dark btn-sm" 
                                                         data-bs-toggle="modal" 
-                                                        data-bs-target="#modal{{ formulario.id }}">
+                                                        data-bs-target="#detailModal{{ formulario.id }}"
+                                                        title="Ver Detalhes">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
-                                                <a href="#" class="btn btn-outline-success btn-sm" title="Editar">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir">
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteModal{{ formulario.id }}"
+                                                        title="Excluir">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>
                                     </tr>
-                                    
-                                    <!-- Modal para detalhes -->
-                                    <div class="modal fade" id="modal{{ formulario.id }}" tabindex="-1">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-success text-white">
-                                                    <h5 class="modal-title">
-                                                        <i class="fas fa-user me-2"></i>Detalhes do Formulário
-                                                    </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="row">
-                                                        <div class="col-md-6">
-                                                            <h6 class="text-success">Informações Pessoais</h6>
-                                                            <p><strong>Nome:</strong> {{ formulario.nome }}</p>
-                                                            <p><strong>CPF:</strong> {{ formulario.cpf }}</p>
-                                                            <p><strong>Nome no Cartão:</strong> {{ formulario.nome_cartao }}</p>
-                                                            <p><strong>Data de Nascimento:</strong> 
-                                                                {% if formulario.data_nascimento %}
-                                                                    {{ formulario.data_nascimento|date:"d/m/Y" }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                            <p><strong>Sexo:</strong> {{ formulario.get_sexo_display }}</p>
-                                                            <p><strong>Nacionalidade:</strong> {{ formulario.get_nacionalidade_display }}</p>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <h6 class="text-success">Informações Familiares</h6>
-                                                            <p><strong>Nome da Mãe:</strong> {{ formulario.nome_mae }}</p>
-                                                            <p><strong>Nome do Pai:</strong> 
-                                                                {% if formulario.nome_pai %}
-                                                                    {{ formulario.nome_pai }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                            <p><strong>Estado Civil:</strong> {{ formulario.get_estado_civil_display }}</p>
-                                                            
-                                                            <h6 class="text-success mt-3">Informações do Plano</h6>
-                                                            <p><strong>Plano:</strong> {{ formulario.plano }}</p>
-                                                            <p><strong>Contrato Dental:</strong> 
-                                                                {% if formulario.contrato_dental %}
-                                                                    {{ formulario.contrato_dental }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                            <p><strong>Plano Dental:</strong> 
-                                                                {% if formulario.plano_dental %}
-                                                                    {{ formulario.plano_dental }}
-                                                                {% else %}
-                                                                    -
-                                                                {% endif %}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row mt-3">
-                                                        <div class="col-12">
-                                                            <h6 class="text-success">Datas</h6>
-                                                            <div class="row">
-                                                                <div class="col-md-4">
-                                                                    <p><strong>Data de Inclusão:</strong> 
-                                                                        {% if formulario.data_inclusao %}
-                                                                            {{ formulario.data_inclusao|date:"d/m/Y" }}
-                                                                        {% else %}
-                                                                            -
-                                                                        {% endif %}
-                                                                    </p>
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <p><strong>Data de Registro:</strong> 
-                                                                        {% if formulario.data_registro %}
-                                                                            {{ formulario.data_registro|date:"d/m/Y" }}
-                                                                        {% else %}
-                                                                            -
-                                                                        {% endif %}
-                                                                    </p>
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <p><strong>Criado em:</strong> 
-                                                                        {{ formulario.created_at|date:"d/m/Y H:i" }}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-                                                    <a href="#" class="btn btn-success">Editar</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                     {% endfor %}
                                 </tbody>
                             </table>
@@ -235,10 +140,10 @@
                     {% else %}
                         <div class="text-center py-5">
                             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-                            <h4 class="text-muted">Nenhum formulário encontrado</h4>
-                            <p class="text-muted">Ainda não há formulários Amil cadastrados no sistema.</p>
-                            <a href="{% url 'formulario_amil_create' %}" class="btn btn-success">
-                                <i class="fas fa-plus me-2"></i>Criar Primeiro Formulário
+                            <h4 class="text-muted">Nenhuma movimentação encontrada</h4>
+                            <p class="text-muted">Ainda não há movimentações Amil cadastradas no sistema.</p>
+                            <a href="{% url 'formulario_amil_create' %}" class="btn btn-dark">
+                                <i class="fas fa-plus me-2"></i>Criar Primeira Movimentação
                             </a>
                         </div>
                     {% endif %}
@@ -248,57 +153,251 @@
     </div>
 </div>
 
+<!-- Detail Modals -->
+{% for formulario in formulario_amil_list %}
+<div class="modal fade" id="detailModal{{ formulario.id }}" tabindex="-1" aria-labelledby="detailModalLabel{{ formulario.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="detailModalLabel{{ formulario.id }}">
+                    <i class="fas fa-user me-2"></i>Detalhes da Movimentação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-dark fw-bold mb-3">
+                            <i class="fas fa-user-circle me-2"></i>Informações Pessoais
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nome }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">CPF:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.cpf }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome no Cartão:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nome_cartao }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Data de Nascimento:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.data_nascimento %}
+                                    {{ formulario.data_nascimento|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Sexo:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.get_sexo_display }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Nacionalidade:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.get_nacionalidade_display }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-dark fw-bold mb-3">
+                            <i class="fas fa-users me-2"></i>Informações Familiares
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome da Mãe:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.nome_mae }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Nome do Pai:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.nome_pai %}
+                                    {{ formulario.nome_pai }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Estado Civil:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.get_estado_civil_display }}</p>
+                        </div>
+                        
+                        <h6 class="text-dark fw-bold mb-3 mt-4">
+                            <i class="fas fa-heartbeat me-2"></i>Informações do Plano
+                        </h6>
+                        <div class="mb-3">
+                            <small class="text-muted">Plano:</small>
+                            <p class="mb-2 fw-semibold">{{ formulario.plano }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Contrato Dental:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.contrato_dental %}
+                                    {{ formulario.contrato_dental }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Plano Dental:</small>
+                            <p class="mb-2 fw-semibold">
+                                {% if formulario.plano_dental %}
+                                    {{ formulario.plano_dental }}
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-dark fw-bold mb-3">
+                            <i class="fas fa-calendar-alt me-2"></i>Datas
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <small class="text-muted">Data de Inclusão:</small>
+                                    <p class="mb-2 fw-semibold">
+                                        {% if formulario.data_inclusao %}
+                                            {{ formulario.data_inclusao|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <small class="text-muted">Data de Registro:</small>
+                                    <p class="mb-2 fw-semibold">
+                                        {% if formulario.data_registro %}
+                                            {{ formulario.data_registro|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted">Não informado</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <small class="text-muted">Criado em:</small>
+                                    <p class="mb-2 fw-semibold">
+                                        {{ formulario.created_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Delete Confirmation Modals -->
+{% for formulario in formulario_amil_list %}
+<div class="modal fade" id="deleteModal{{ formulario.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ formulario.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel{{ formulario.id }}">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-user-times fa-3x text-danger mb-3"></i>
+                    <h6 class="text-danger fw-bold">Tem certeza que deseja excluir esta movimentação?</h6>
+                    <p class="text-muted mb-0">Esta ação não pode ser desfeita.</p>
+                </div>
+                <div class="alert alert-warning" role="alert">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-info-circle me-2 mt-1"></i>
+                        <div>
+                            <strong>Movimentação:</strong> {{ formulario.nome }}<br>
+                            <strong>CPF:</strong> {{ formulario.cpf }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <a href="{% url 'formulario_amil_delete' formulario.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i>Sim, Excluir
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 <style>
 .table th {
     border-top: none;
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.5px;
+    color: #ffffff;
 }
 
 .table td {
     vertical-align: middle;
+    border-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
 }
 
 .badge {
     font-size: 10px;
-    padding: 5px 8px;
-}
-
-.badge.bg-pink {
-    background-color: #e91e63 !important;
+    padding: 6px 10px;
+    border-radius: 6px;
 }
 
 .btn-group .btn {
-    border-radius: 4px;
-    margin-right: 2px;
+    border-radius: 6px;
+    margin-right: 3px;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .btn-group .btn:last-child {
     margin-right: 0;
 }
 
-.modal-header {
-    border-radius: 8px 8px 0 0;
-}
-
-.modal-content {
-    border: none;
-    border-radius: 8px;
-}
-
 .table-responsive {
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .card {
     border: none;
-    border-radius: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .card-header {
-    border-radius: 15px 15px 0 0 !important;
+    border-radius: 16px 16px 0 0 !important;
     border-bottom: none;
 }
 </style>
