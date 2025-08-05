@@ -113,7 +113,7 @@ def api_viewer(request):
     return render(request, 'formulario2/api_viewer.html')
 
 @method_decorator(csrf_exempt, name='dispatch')
-class Formulario2APIView(LoginRequiredMixin, View):
+class Formulario2APIView(View):
     """
     API endpoint para gerenciar dados do Formulario2
     GET: Retorna todos os registros
@@ -194,7 +194,7 @@ class Formulario2APIView(LoginRequiredMixin, View):
             }, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class FormularioAmilAPIView(LoginRequiredMixin, View):
+class FormularioAmilAPIView(View):
     """
     API endpoint para gerenciar dados do FormularioAmil
     GET: Retorna todos os registros
@@ -281,7 +281,7 @@ class FormularioAmilAPIView(LoginRequiredMixin, View):
             }, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class Formulario2DetailAPIView(LoginRequiredMixin, View):
+class Formulario2DetailAPIView(View):
     """
     API endpoint para gerenciar um registro específico do Formulario2
     GET: Retorna um registro específico
@@ -342,7 +342,7 @@ class Formulario2DetailAPIView(LoginRequiredMixin, View):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
-class FormularioAmilDetailAPIView(LoginRequiredMixin, View):
+class FormularioAmilDetailAPIView(View):
     """
     API endpoint para gerenciar um registro específico do FormularioAmil
     GET: Retorna um registro específico
