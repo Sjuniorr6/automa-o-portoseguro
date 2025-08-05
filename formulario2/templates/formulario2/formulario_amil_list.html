@@ -1,0 +1,305 @@
+{% extends 'formulario2/base.html' %}
+
+{% block title %}Lista de Formulários Amil{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Formulários Amil
+                    </h3>
+                    <div>
+                        <a href="{% url 'formulario_amil_create' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Novo Formulário
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fas fa-home me-1"></i>Início
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if formulario_amil_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome</th>
+                                        <th>CPF</th>
+                                        <th>Data de Nascimento</th>
+                                        <th>Sexo</th>
+                                        <th>Plano</th>
+                                        <th>Data de Criação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for formulario in formulario_amil_list %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ formulario.id }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ formulario.nome }}</strong>
+                                            {% if formulario.nome_cartao %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-credit-card me-1"></i>{{ formulario.nome_cartao }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <code>{{ formulario.cpf }}</code>
+                                        </td>
+                                        <td>
+                                            {% if formulario.data_nascimento %}
+                                                {{ formulario.data_nascimento|date:"d/m/Y" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if formulario.sexo == 'M' %}
+                                                <span class="badge bg-primary">Masculino</span>
+                                            {% elif formulario.sexo == 'F' %}
+                                                <span class="badge bg-pink">Feminino</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ formulario.get_sexo_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">{{ formulario.plano }}</span>
+                                            {% if formulario.plano_dental %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-tooth me-1"></i>{{ formulario.plano_dental }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ formulario.created_at|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#modal{{ formulario.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <a href="#" class="btn btn-outline-success btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Modal para detalhes -->
+                                    <div class="modal fade" id="modal{{ formulario.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-user me-2"></i>Detalhes do Formulário
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-success">Informações Pessoais</h6>
+                                                            <p><strong>Nome:</strong> {{ formulario.nome }}</p>
+                                                            <p><strong>CPF:</strong> {{ formulario.cpf }}</p>
+                                                            <p><strong>Nome no Cartão:</strong> {{ formulario.nome_cartao }}</p>
+                                                            <p><strong>Data de Nascimento:</strong> 
+                                                                {% if formulario.data_nascimento %}
+                                                                    {{ formulario.data_nascimento|date:"d/m/Y" }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                            <p><strong>Sexo:</strong> {{ formulario.get_sexo_display }}</p>
+                                                            <p><strong>Nacionalidade:</strong> {{ formulario.get_nacionalidade_display }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-success">Informações Familiares</h6>
+                                                            <p><strong>Nome da Mãe:</strong> {{ formulario.nome_mae }}</p>
+                                                            <p><strong>Nome do Pai:</strong> 
+                                                                {% if formulario.nome_pai %}
+                                                                    {{ formulario.nome_pai }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                            <p><strong>Estado Civil:</strong> {{ formulario.get_estado_civil_display }}</p>
+                                                            
+                                                            <h6 class="text-success mt-3">Informações do Plano</h6>
+                                                            <p><strong>Plano:</strong> {{ formulario.plano }}</p>
+                                                            <p><strong>Contrato Dental:</strong> 
+                                                                {% if formulario.contrato_dental %}
+                                                                    {{ formulario.contrato_dental }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                            <p><strong>Plano Dental:</strong> 
+                                                                {% if formulario.plano_dental %}
+                                                                    {{ formulario.plano_dental }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <div class="col-12">
+                                                            <h6 class="text-success">Datas</h6>
+                                                            <div class="row">
+                                                                <div class="col-md-4">
+                                                                    <p><strong>Data de Inclusão:</strong> 
+                                                                        {% if formulario.data_inclusao %}
+                                                                            {{ formulario.data_inclusao|date:"d/m/Y" }}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </p>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <p><strong>Data de Registro:</strong> 
+                                                                        {% if formulario.data_registro %}
+                                                                            {{ formulario.data_registro|date:"d/m/Y" }}
+                                                                        {% else %}
+                                                                            -
+                                                                        {% endif %}
+                                                                    </p>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <p><strong>Criado em:</strong> 
+                                                                        {{ formulario.created_at|date:"d/m/Y H:i" }}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                                    <a href="#" class="btn btn-success">Editar</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginação -->
+                        {% if is_paginated %}
+                        <nav aria-label="Navegação de páginas">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">Nenhum formulário encontrado</h4>
+                            <p class="text-muted">Ainda não há formulários Amil cadastrados no sistema.</p>
+                            <a href="{% url 'formulario_amil_create' %}" class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i>Criar Primeiro Formulário
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 10px;
+    padding: 5px 8px;
+}
+
+.badge.bg-pink {
+    background-color: #e91e63 !important;
+}
+
+.btn-group .btn {
+    border-radius: 4px;
+    margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+.modal-header {
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: none;
+}
+</style>
+{% endblock %} 

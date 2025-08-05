@@ -16,8 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from formulario2.views import (
+    Formulario2APIView, Formulario2DetailAPIView,
+    FormularioAmilAPIView, FormularioAmilDetailAPIView
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('formulario2/', include('formulario2.urls')),
+    
+    # API Endpoints - Formulario2 (Porto)
+    path('api/porto/', Formulario2APIView.as_view(), name='formulario2_api'),
+    path('api/porto/<int:pk>/', Formulario2DetailAPIView.as_view(), name='formulario2_detail_api'),
+    
+    # API Endpoints - FormularioAmil
+    path('api/amil/', FormularioAmilAPIView.as_view(), name='formulario_amil_api'),
+    path('api/amil/<int:pk>/', FormularioAmilDetailAPIView.as_view(), name='formulario_amil_detail_api'),
 ]

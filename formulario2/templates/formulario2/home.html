@@ -1,0 +1,103 @@
+{% extends 'formulario2/base.html' %}
+
+{% block title %}Sistema de Formulários{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary">Sistema de Formulários</h1>
+                <p class="lead">Selecione o tipo de formulário que deseja preencher</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                            </div>
+                            <h5 class="card-title">Formulário Porto Seguro</h5>
+                            <p class="card-text">Formulário para cadastro no sistema Porto Seguro</p>
+                            <a href="{% url 'formulario2_create' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-edit me-2"></i>Preencher Formulário
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-heartbeat fa-3x text-success"></i>
+                            </div>
+                            <h5 class="card-title">Formulário Amil</h5>
+                            <p class="card-text">Formulário para cadastro no sistema Amil</p>
+                            <a href="{% url 'formulario_amil_create' %}" class="btn btn-success btn-lg">
+                                <i class="fas fa-edit me-2"></i>Preencher Formulário
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Visualizar Formulários Porto</h6>
+                            <a href="{% url 'formulario2_list' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-list me-2"></i>Ver Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Visualizar Formulários Amil</h6>
+                            <a href="{% url 'formulario_amil_list' %}" class="btn btn-outline-success">
+                                <i class="fas fa-list me-2"></i>Ver Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out;
+    border: none;
+    border-radius: 15px;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-weight: 600;
+}
+
+.btn-lg {
+    padding: 15px 40px;
+}
+
+.display-4 {
+    font-weight: 700;
+}
+
+.lead {
+    color: #6c757d;
+    font-size: 1.2rem;
+}
+</style>
+{% endblock %} 

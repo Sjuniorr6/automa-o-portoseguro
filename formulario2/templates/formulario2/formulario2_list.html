@@ -1,516 +1,277 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Cadastros</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .gradient-bg {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e5e5e5 50%, #d4d4d4 100%);
-        }
-        
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-shadow {
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.6s ease-in-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .slide-in {
-            animation: slideIn 0.5s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(-100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .modal-overlay {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
-        
-        .modal-content {
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        
-        @keyframes modalSlideIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        
-        .search-focus {
-            transition: all 0.3s ease;
-        }
-        
-        .search-focus:focus {
-            transform: scale(1.02);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .btn-hover:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        }
-        
-        .pagination-btn {
-            transition: all 0.3s ease;
-        }
-        
-        .pagination-btn:hover {
-            transform: scale(1.1);
-        }
-        
-        .pagination-btn.active {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-        }
-    </style>
-</head>
-<body class="gradient-bg min-h-screen py-8 px-4">
-    <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8 fade-in">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Lista de Cadastros</h1>
-            <p class="text-gray-600 text-lg">Visualize e gerencie todos os registros do sistema</p>
-        </div>
+{% extends 'formulario2/base.html' %}
 
-        <!-- Controls Section -->
-        <div class="glass-effect card-shadow rounded-2xl p-6 mb-8 fade-in">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <!-- Search and Filter -->
-                <div class="flex flex-col md:flex-row gap-4 flex-1">
-                    <div class="relative">
-                        <input type="text" id="searchInput" placeholder="Buscar por nome, email ou CPF..." 
-                               class="search-focus w-full md:w-80 px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80">
-                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
+{% block title %}Lista de Formulários Porto{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Formulários Porto Seguro
+                    </h3>
+                    <div>
+                        <a href="{% url 'formulario2_create' %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Novo Formulário
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fas fa-home me-1"></i>Início
+                        </a>
                     </div>
-                    
-                    <select id="filterGenero" class="search-focus px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80">
-                        <option value="">Todos os gêneros</option>
-                        <option value="M">Masculino</option>
-                        <option value="F">Feminino</option>
-                        <option value="O">Outro</option>
-                    </select>
-                    
-                    <select id="filterEstadoCivil" class="search-focus px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80">
-                        <option value="">Todos os estados civis</option>
-                        <option value="S">Solteiro(a)</option>
-                        <option value="C">Casado(a)</option>
-                        <option value="D">Divorciado(a)</option>
-                        <option value="V">Viúvo(a)</option>
-                    </select>
                 </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex gap-3">
-                    <a href="{% url 'automation_logs' %}" 
-                       class="btn-hover bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        🤖 Automações
-                    </a>
-                    <a href="{% url 'formulario2_create' %}" 
-                       class="btn-hover bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Novo Cadastro
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Info -->
-        <div class="glass-effect rounded-xl p-4 mb-6 fade-in">
-            <div class="flex justify-between items-center">
-                <p class="text-gray-700">
-                    <span id="resultsCount">{{ formulario2_list|length }}</span> registros encontrados
-                </p>
-                <div class="flex gap-2">
-                    <button id="exportBtn" class="btn-hover bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
-                        Exportar
-                    </button>
-                    <button id="printBtn" class="btn-hover bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
-                        Imprimir
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cards Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="cardsContainer">
-            {% for formulario in formulario2_list %}
-            <div class="glass-effect card-shadow rounded-xl p-6 card-hover slide-in" data-index="{{ forloop.counter0 }}">
-                <!-- Header -->
-                <div class="flex justify-between items-start mb-4">
-                    <div class="flex items-center">
-                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            {{ formulario.nomeCompleto|first|upper }}
+                <div class="card-body">
+                    {% if formulario2_list %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nome Completo</th>
+                                        <th>CPF</th>
+                                        <th>Email</th>
+                                        <th>Telefone</th>
+                                        <th>Gênero</th>
+                                        <th>Estado Civil</th>
+                                        <th>Data de Criação</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for formulario in formulario2_list %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ formulario.id }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ formulario.nomeCompleto }}</strong>
+                                            {% if formulario.nomeSocial %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-user-tag me-1"></i>{{ formulario.nomeSocial }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <code>{{ formulario.cpf }}</code>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ formulario.email }}" class="text-decoration-none">
+                                                {{ formulario.email }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="tel:{{ formulario.telefone }}" class="text-decoration-none">
+                                                {{ formulario.telefone }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if formulario.genero == 'M' %}
+                                                <span class="badge bg-primary">Masculino</span>
+                                            {% elif formulario.genero == 'F' %}
+                                                <span class="badge bg-pink">Feminino</span>
+                                            {% elif formulario.genero == 'O' %}
+                                                <span class="badge bg-info">Outro</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ formulario.get_genero_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if formulario.estadoCivil == 'S' %}
+                                                <span class="badge bg-success">Solteiro</span>
+                                            {% elif formulario.estadoCivil == 'C' %}
+                                                <span class="badge bg-warning">Casado</span>
+                                            {% elif formulario.estadoCivil == 'D' %}
+                                                <span class="badge bg-danger">Divorciado</span>
+                                            {% elif formulario.estadoCivil == 'V' %}
+                                                <span class="badge bg-dark">Viúvo</span>
+                                            {% elif formulario.estadoCivil == 'U' %}
+                                                <span class="badge bg-info">União Estável</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ formulario.get_estadoCivil_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ formulario.dataNascimento|date:"d/m/Y" }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#modal{{ formulario.id }}">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <a href="#" class="btn btn-outline-warning btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" title="Excluir">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Modal para detalhes -->
+                                    <div class="modal fade" id="modal{{ formulario.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-primary text-white">
+                                                    <h5 class="modal-title">
+                                                        <i class="fas fa-user me-2"></i>Detalhes do Formulário
+                                                    </h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-primary">Informações Pessoais</h6>
+                                                            <p><strong>Nome Completo:</strong> {{ formulario.nomeCompleto }}</p>
+                                                            {% if formulario.nomeSocial %}
+                                                                <p><strong>Nome Social:</strong> {{ formulario.nomeSocial }}</p>
+                                                            {% endif %}
+                                                            <p><strong>CPF:</strong> {{ formulario.cpf }}</p>
+                                                            <p><strong>RG:</strong> {{ formulario.rg }}</p>
+                                                            <p><strong>Órgão Emissor:</strong> {{ formulario.orgaoEmissor }}</p>
+                                                            <p><strong>Data de Emissão:</strong> 
+                                                                {% if formulario.dataEmissao %}
+                                                                    {{ formulario.dataEmissao|date:"d/m/Y" }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                            <p><strong>Data de Nascimento:</strong> 
+                                                                {% if formulario.dataNascimento %}
+                                                                    {{ formulario.dataNascimento|date:"d/m/Y" }}
+                                                                {% else %}
+                                                                    -
+                                                                {% endif %}
+                                                            </p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-primary">Contato</h6>
+                                                            <p><strong>Email:</strong> {{ formulario.email }}</p>
+                                                            <p><strong>Telefone:</strong> {{ formulario.telefone }}</p>
+                                                            
+                                                            <h6 class="text-primary mt-3">Informações Demográficas</h6>
+                                                            <p><strong>Gênero:</strong> {{ formulario.get_genero_display }}</p>
+                                                            <p><strong>Estado Civil:</strong> {{ formulario.get_estadoCivil_display }}</p>
+                                                            <p><strong>Nome da Mãe:</strong> {{ formulario.nomeMae }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                                    <a href="#" class="btn btn-primary">Editar</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                        <div class="ml-3">
-                            <h3 class="font-semibold text-gray-800 text-lg">{{ formulario.nomeCompleto }}</h3>
-                            <p class="text-gray-600 text-sm">{{ formulario.email }}</p>
+                        
+                        <!-- Paginação -->
+                        {% if is_paginated %}
+                        <nav aria-label="Navegação de páginas">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; Primeira</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                        
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">Nenhum formulário encontrado</h4>
+                            <p class="text-muted">Ainda não há formulários Porto cadastrados no sistema.</p>
+                            <a href="{% url 'formulario2_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Criar Primeiro Formulário
+                            </a>
                         </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="viewDetails({{ formulario.id }})" 
-                                class="btn-hover bg-blue-100 text-blue-600 p-2 rounded-lg hover:bg-blue-200 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                            </svg>
-                        </button>
-                        <button onclick="editRecord({{ formulario.id }})" 
-                                class="btn-hover bg-yellow-100 text-yellow-600 p-2 rounded-lg hover:bg-yellow-200 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                        </button>
-                        <button onclick="deleteRecord({{ formulario.id }})" 
-                                class="btn-hover bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Info Grid -->
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="text-gray-500">CPF:</span>
-                        <p class="font-medium text-gray-800">{{ formulario.cpf }}</p>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Telefone:</span>
-                        <p class="font-medium text-gray-800">{{ formulario.telefone }}</p>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Gênero:</span>
-                        <p class="font-medium text-gray-800">
-                            {% if formulario.genero == 'M' %}Masculino
-                            {% elif formulario.genero == 'F' %}Feminino
-                            {% elif formulario.genero == 'O' %}Outro
-                            {% else %}{{ formulario.genero }}{% endif %}
-                        </p>
-                    </div>
-                    <div>
-                        <span class="text-gray-500">Estado Civil:</span>
-                        <p class="font-medium text-gray-800">
-                            {% if formulario.estadoCivil == 'S' %}Solteiro(a)
-                            {% elif formulario.estadoCivil == 'C' %}Casado(a)
-                            {% elif formulario.estadoCivil == 'D' %}Divorciado(a)
-                            {% elif formulario.estadoCivil == 'V' %}Viúvo(a)
-                            {% else %}{{ formulario.estadoCivil }}{% endif %}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Additional Info -->
-                <div class="mt-4 pt-4 border-t border-gray-200">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="text-gray-500">Data de Nascimento:</span>
-                        <span class="font-medium text-gray-800">{{ formulario.dataNascimento|date:"d/m/Y" }}</span>
-                    </div>
-                    {% if formulario.nomeSocial %}
-                    <div class="flex justify-between items-center text-sm mt-1">
-                        <span class="text-gray-500">Nome Social:</span>
-                        <span class="font-medium text-gray-800">{{ formulario.nomeSocial }}</span>
-                    </div>
                     {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <div class="col-span-full text-center py-12">
-                <div class="glass-effect rounded-xl p-8">
-                    <div class="text-gray-400 text-6xl mb-4">📋</div>
-                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Nenhum registro encontrado</h3>
-                    <p class="text-gray-500 mb-6">Comece criando o primeiro cadastro no sistema.</p>
-                    <a href="{% url 'formulario2_create' %}" 
-                       class="btn-hover bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300">
-                        Criar Primeiro Cadastro
-                    </a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Pagination -->
-        {% if formulario2_list.has_other_pages %}
-        <div class="glass-effect rounded-xl p-6 mt-8 fade-in">
-            <div class="flex justify-center items-center space-x-2">
-                {% if formulario2_list.has_previous %}
-                <a href="?page={{ formulario2_list.previous_page_number }}" 
-                   class="pagination-btn bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-                    Anterior
-                </a>
-                {% endif %}
-                
-                {% for num in formulario2_list.paginator.page_range %}
-                    {% if formulario2_list.number == num %}
-                    <span class="pagination-btn active px-4 py-2 rounded-lg">{{ num }}</span>
-                    {% elif num > formulario2_list.number|add:'-3' and num < formulario2_list.number|add:'3' %}
-                    <a href="?page={{ num }}" 
-                       class="pagination-btn bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-                        {{ num }}
-                    </a>
-                    {% endif %}
-                {% endfor %}
-                
-                {% if formulario2_list.has_next %}
-                <a href="?page={{ formulario2_list.next_page_number }}" 
-                   class="pagination-btn bg-white text-gray-700 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
-                    Próximo
-                </a>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Modal for Details -->
-    <div id="detailsModal" class="hidden fixed inset-0 z-50 modal-overlay">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-content glass-effect rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Detalhes do Cadastro</h2>
-                    <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div id="modalContent">
-                    <!-- Content will be loaded here -->
-                </div>
-            </div>
         </div>
     </div>
+</div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 z-50 modal-overlay">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="modal-content glass-effect rounded-2xl p-8 max-w-md w-full">
-                <div class="text-center">
-                    <div class="text-red-500 text-6xl mb-4">⚠️</div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Confirmar Exclusão</h3>
-                    <p class="text-gray-600 mb-6">Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</p>
-                    <div class="flex gap-4 justify-center">
-                        <button onclick="closeDeleteModal()" 
-                                class="btn-hover bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors">
-                            Cancelar
-                        </button>
-                        <button id="confirmDeleteBtn" 
-                                class="btn-hover bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">
-                            Excluir
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<style>
+.table th {
+    border-top: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
 
-    <script>
-        // Search and filter functionality
-        function filterCards() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const generoFilter = document.getElementById('filterGenero').value;
-            const estadoCivilFilter = document.getElementById('filterEstadoCivil').value;
-            const cards = document.querySelectorAll('#cardsContainer > div');
-            let visibleCount = 0;
+.table td {
+    vertical-align: middle;
+}
 
-            cards.forEach(card => {
-                const nome = card.querySelector('h3').textContent.toLowerCase();
-                const email = card.querySelector('p').textContent.toLowerCase();
-                const cpf = card.querySelector('.grid-cols-2 div:first-child p').textContent.toLowerCase();
-                const genero = card.querySelector('.grid-cols-2 div:nth-child(3) p').textContent.toLowerCase();
-                const estadoCivil = card.querySelector('.grid-cols-2 div:nth-child(4) p').textContent.toLowerCase();
+.badge {
+    font-size: 10px;
+    padding: 5px 8px;
+}
 
-                const matchesSearch = nome.includes(searchTerm) || email.includes(searchTerm) || cpf.includes(searchTerm);
-                const matchesGenero = !generoFilter || genero.includes(generoFilter.toLowerCase());
-                const matchesEstadoCivil = !estadoCivilFilter || estadoCivil.includes(estadoCivilFilter.toLowerCase());
+.badge.bg-pink {
+    background-color: #e91e63 !important;
+}
 
-                if (matchesSearch && matchesGenero && matchesEstadoCivil) {
-                    card.style.display = 'block';
-                    visibleCount++;
-                    card.classList.add('slide-in');
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+.btn-group .btn {
+    border-radius: 4px;
+    margin-right: 2px;
+}
 
-            document.getElementById('resultsCount').textContent = visibleCount;
-        }
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
 
-        // Event listeners for search and filter
-        document.getElementById('searchInput').addEventListener('input', filterCards);
-        document.getElementById('filterGenero').addEventListener('change', filterCards);
-        document.getElementById('filterEstadoCivil').addEventListener('change', filterCards);
+.modal-header {
+    border-radius: 8px 8px 0 0;
+}
 
-        // Modal functions
-        function viewDetails(id) {
-            // Simulate loading details
-            document.getElementById('modalContent').innerHTML = `
-                <div class="text-center py-8">
-                    <div class="loading-spinner mx-auto mb-4"></div>
-                    <p class="text-gray-600">Carregando detalhes...</p>
-                </div>
-            `;
-            document.getElementById('detailsModal').classList.remove('hidden');
-            
-            // Simulate API call
-            setTimeout(() => {
-                document.getElementById('modalContent').innerHTML = `
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <span class="text-gray-500 text-sm">Nome Completo:</span>
-                                <p class="font-medium">João Silva Santos</p>
-                            </div>
-                            <div>
-                                <span class="text-gray-500 text-sm">Email:</span>
-                                <p class="font-medium">joao@email.com</p>
-                            </div>
-                            <div>
-                                <span class="text-gray-500 text-sm">CPF:</span>
-                                <p class="font-medium">123.456.789-00</p>
-                            </div>
-                            <div>
-                                <span class="text-gray-500 text-sm">Telefone:</span>
-                                <p class="font-medium">(11) 99999-9999</p>
-                            </div>
-                        </div>
-                        <div class="border-t pt-4">
-                            <h4 class="font-semibold text-gray-800 mb-2">Informações Adicionais</h4>
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <span class="text-gray-500">Data de Nascimento:</span>
-                                    <p class="font-medium">15/03/1990</p>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Gênero:</span>
-                                    <p class="font-medium">Masculino</p>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Estado Civil:</span>
-                                    <p class="font-medium">Solteiro</p>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Nome da Mãe:</span>
-                                    <p class="font-medium">Maria Silva</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }, 1000);
-        }
+.modal-content {
+    border: none;
+    border-radius: 8px;
+}
 
-        function closeModal() {
-            document.getElementById('detailsModal').classList.add('hidden');
-        }
+.table-responsive {
+    border-radius: 8px;
+}
 
-        function editRecord(id) {
-            // Redirect to edit page or show edit modal
-            alert('Funcionalidade de edição será implementada');
-        }
+.card {
+    border: none;
+    border-radius: 15px;
+}
 
-        function deleteRecord(id) {
-            document.getElementById('deleteModal').classList.remove('hidden');
-            document.getElementById('confirmDeleteBtn').onclick = function() {
-                // Simulate deletion
-                const card = document.querySelector(`[data-index="${id}"]`);
-                if (card) {
-                    card.style.animation = 'slideOut 0.3s ease-out';
-                    setTimeout(() => {
-                        card.remove();
-                        filterCards(); // Update count
-                    }, 300);
-                }
-                closeDeleteModal();
-            };
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').classList.add('hidden');
-        }
-
-        // Export functionality
-        document.getElementById('exportBtn').addEventListener('click', function() {
-            alert('Funcionalidade de exportação será implementada');
-        });
-
-        // Print functionality
-        document.getElementById('printBtn').addEventListener('click', function() {
-            window.print();
-        });
-
-        // Close modals when clicking outside
-        document.getElementById('detailsModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeDeleteModal();
-            }
-        });
-
-        // Add loading spinner style
-        const style = document.createElement('style');
-        style.textContent = `
-            .loading-spinner {
-                border: 3px solid #f3f3f3;
-                border-top: 3px solid #4f46e5;
-                border-radius: 50%;
-                width: 30px;
-                height: 30px;
-                animation: spin 1s linear infinite;
-            }
-            
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            
-            @keyframes slideOut {
-                to { transform: translateX(-100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    </script>
-</body>
-</html>
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: none;
+}
+</style>
+{% endblock %}

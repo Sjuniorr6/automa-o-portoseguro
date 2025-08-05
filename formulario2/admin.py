@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Formulario2, AutomationLog
+from .models import Formulario2, FormularioAmil, AutomationLog
 
 @admin.register(Formulario2)
 class Formulario2Admin(admin.ModelAdmin):
@@ -17,6 +17,32 @@ class Formulario2Admin(admin.ModelAdmin):
         }),
         ('Contato', {
             'fields': ('telefone', 'email')
+        }),
+    )
+
+@admin.register(FormularioAmil)
+class FormularioAmilAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'cpf', 'plano', 'sexo', 'estado_civil', 'created_at')
+    list_filter = ('sexo', 'estado_civil', 'nacionalidade', 'created_at')
+    search_fields = ('nome', 'cpf', 'nome_cartao', 'plano')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    
+    fieldsets = (
+        ('Informações Pessoais', {
+            'fields': ('nome', 'cpf', 'nome_cartao', 'data_nascimento', 'sexo', 'nacionalidade')
+        }),
+        ('Datas', {
+            'fields': ('data_inclusao', 'data_registro')
+        }),
+        ('Informações Familiares', {
+            'fields': ('nome_mae', 'nome_pai', 'estado_civil')
+        }),
+        ('Informações do Plano', {
+            'fields': ('plano', 'contrato_dental', 'plano_dental')
+        }),
+        ('Metadados', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
         }),
     )
 

@@ -1,0 +1,373 @@
+{% extends 'formulario2/base.html' %}
+
+{% block title %}Formulário Amil{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-heartbeat me-2"></i>Formulário Amil
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Mensagens de erro/sucesso -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Informações Pessoais -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-user me-2"></i>Informações Pessoais
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                    {{ form.nome.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nome }}
+                                {% if form.nome.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.cpf.id_for_label }}" class="form-label">
+                                    {{ form.cpf.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.cpf }}
+                                <div class="form-text">999.999.999-99</div>
+                                {% if form.cpf.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.cpf.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.nome_cartao.id_for_label }}" class="form-label">
+                                    {{ form.nome_cartao.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nome_cartao }}
+                                {% if form.nome_cartao.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome_cartao.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Datas -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-calendar me-2"></i>Datas
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.data_inclusao.id_for_label }}" class="form-label">
+                                    {{ form.data_inclusao.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_inclusao }}
+                                <div class="form-text text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    ATENÇÃO! Será calculada pró-rata de 17 dias
+                                </div>
+                                {% if form.data_inclusao.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.data_inclusao.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.data_registro.id_for_label }}" class="form-label">
+                                    {{ form.data_registro.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_registro }}
+                                <div class="form-text">dd/mm/aaaa</div>
+                                {% if form.data_registro.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.data_registro.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.data_nascimento.id_for_label }}" class="form-label">
+                                    {{ form.data_nascimento.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.data_nascimento }}
+                                <div class="form-text">dd/mm/aaaa</div>
+                                {% if form.data_nascimento.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.data_nascimento.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Demográficos -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-users me-2"></i>Informações Demográficas
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    {{ form.sexo.label }} <span class="text-danger">*</span>
+                                </label>
+                                <div class="d-flex gap-4">
+                                    {% for radio in form.sexo %}
+                                        <div class="form-check">
+                                            {{ radio }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.sexo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.sexo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    {{ form.nacionalidade.label }}
+                                </label>
+                                <div class="d-flex gap-4">
+                                    {% for radio in form.nacionalidade %}
+                                        <div class="form-check">
+                                            {{ radio }}
+                                            <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if form.nacionalidade.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nacionalidade.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Informações Familiares -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-home me-2"></i>Informações Familiares
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nome_mae.id_for_label }}" class="form-label">
+                                    {{ form.nome_mae.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.nome_mae }}
+                                {% if form.nome_mae.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome_mae.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nome_pai.id_for_label }}" class="form-label">
+                                    {{ form.nome_pai.label }}
+                                </label>
+                                {{ form.nome_pai }}
+                                {% if form.nome_pai.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nome_pai.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.estado_civil.id_for_label }}" class="form-label">
+                                    {{ form.estado_civil.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.estado_civil }}
+                                {% if form.estado_civil.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.estado_civil.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Informações do Plano -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-success border-bottom pb-2">
+                                    <i class="fas fa-file-medical me-2"></i>Informações do Plano
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.plano.id_for_label }}" class="form-label">
+                                    {{ form.plano.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.plano }}
+                                {% if form.plano.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.plano.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.contrato_dental.id_for_label }}" class="form-label">
+                                    {{ form.contrato_dental.label }}
+                                </label>
+                                {{ form.contrato_dental }}
+                                {% if form.contrato_dental.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.contrato_dental.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="{{ form.plano_dental.id_for_label }}" class="form-label">
+                                    {{ form.plano_dental.label }}
+                                </label>
+                                {{ form.plano_dental }}
+                                {% if form.plano_dental.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.plano_dental.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Botões -->
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-success btn-lg me-3">
+                                    <i class="fas fa-save me-2"></i>Salvar Formulário
+                                </button>
+                                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-arrow-left me-2"></i>Voltar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 12px 15px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 12px 15px;
+    font-size: 14px;
+}
+
+.form-select:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    border-bottom: none;
+}
+
+.btn {
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-weight: 600;
+}
+
+.btn-lg {
+    padding: 15px 40px;
+}
+
+.form-text {
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.invalid-feedback {
+    font-size: 12px;
+    margin-top: 5px;
+}
+</style>
+{% endblock %} 
